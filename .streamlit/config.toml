@@ -1,0 +1,19 @@
+# Hassad app theme -- light, high-contrast, readable in direct sunlight on a phone.
+[theme]
+base = "light"
+primaryColor = "#2F7D46"          # green: the one action colour (buttons)
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FFF6DC"
+textColor = "#111111"
+font = "sans serif"
+baseFontSize = 18
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+headless = true
+runOnSave = true
+
+[browser]
+gatherUsageStats = false
