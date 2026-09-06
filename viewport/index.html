@@ -1,0 +1,39 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>hassad viewport</title></head>
+<body style="margin:0;background:transparent">
+<script>
+/* Hassad: tell the Python side how big the browser window is, so the map can be
+   rendered at the right height and the layout chosen for a phone, a tablet or a
+   laptop. Invisible (0 px tall). Reports once when Streamlit asks it to render,
+   and again only when the window crosses a breakpoint (no needless reruns). */
+(function () {
+  function send(type, data) {
+    var msg = { isStreamlitMessage: true, type: type };
+    for (var k in (data || {})) { msg[k] = data[k]; }
+    window.parent.postMessage(msg, "*");
+  }
+  function size() {
+    var w = 0, h = 0;
+    try { w = window.parent.innerWidth; h = window.parent.innerHeight; } catch (e) {}
+    if (!w) { w = window.innerWidth; h = window.innerHeight; }
+    return { w: w, h: h };
+  }
+  function bucket(w) { return w >= 960 ? "laptop" : (w >= 640 ? "tablet" : "phone"); }
+  var reported = null;
+  function report(force) {
+    var s = size();
+    if (!force && reported && bucket(s.w) === bucket(reported.w) && Math.abs(s.h - reported.h) < 120) { return; }
+    reported = s;
+    send("streamlit:setComponentValue", { value: s, dataType: "json" });
+  }
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data.type === "streamlit:render") { send("streamlit:setFrameHeight", { height: 0 }); report(true); }
+  });
+  var t = null;
+  try {
+    window.parent.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(function () { report(false); }, 350); });
+  } catch (e) {}
+  send("streamlit:componentReady", { apiVersion: 1 });
+})();
+</script>
+</body></html>

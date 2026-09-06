@@ -12,6 +12,9 @@ STRINGS = {
     "en": {
         "lang_name": "English",
         "about": "About Hassad",
+        "privacy": "Privacy",
+        "privacy_title": "Privacy and who we are",
+        "footer_owner": "© 2026 RoboGeex Academy · Hassad, FIRST Global Team Lebanon",
         "back_plan": "Back to the plan",
         "title": "Hassad",
         "tagline": "Cut your fields in the safest order.",
@@ -22,6 +25,8 @@ STRINGS = {
         "draw_hint": "Use the pencil tool on the map to outline each field, then press “Make my plan”.",
         "drawn_none": "No fields drawn yet.",
         "n_fields": "{n} fields",
+        "rule_dry": "dry-year",
+        "rule_wet": "wet-year",
         "all": "All",
         "none": "None",
         "make_plan": "Make my plan",
@@ -112,6 +117,9 @@ STRINGS = {
     "ar": {
         "lang_name": "العربية",
         "about": "عن «حصاد»",
+        "privacy": "الخصوصية",
+        "privacy_title": "الخصوصية ومن نحن",
+        "footer_owner": "© 2026 أكاديمية RoboGeex · حصاد، فريق لبنان في FIRST Global",
         "back_plan": "العودة إلى الخطة",
         "title": "حصاد",
         "tagline": "احصد حقولك بالترتيب الأكثر أماناً.",
@@ -122,6 +130,8 @@ STRINGS = {
         "draw_hint": "ارسم حدود كل حقل بأداة المضلّع على الخريطة، ثم اضغط «جهّز خطتي».",
         "drawn_none": "لم ترسم أي حقل بعد.",
         "n_fields": "عدد الحقول: {n}",
+        "rule_dry": "السنة الجافة",
+        "rule_wet": "السنة الرطبة",
         "all": "الكل",
         "none": "إلغاء الكل",
         "make_plan": "جهّز خطتي",
@@ -240,6 +250,51 @@ def days_word(n, lang):
     return f'{n} {s["day"] if n == 1 else s["days"]}'
 
 
+def _count_ar(n, one, two, few, many):
+    """Arabic counted nouns: 1 · 2 (dual) · 3–10 (plural) · 11+ (singular accusative)."""
+    if n == 1:
+        return one
+    if n == 2:
+        return two
+    if 3 <= n <= 10:
+        return f"{n} {few}"
+    return f"{n:,} {many}"
+
+
+def fields_word(n, lang):
+    """'11 fields' / '11 حقلاً' with the grammar a farmer would use."""
+    if lang == "ar":
+        return _count_ar(n, "حقل واحد", "حقلان", "حقول", "حقلاً")
+    return f"{n} field" if n == 1 else f"{n:,} fields"
+
+
+def blocks_word(n, lang):
+    """'2 connected blocks' / 'كتلتين متصلتين'."""
+    if lang == "ar":
+        return _count_ar(n, "كتلة واحدة متصلة", "كتلتين متصلتين", "كتل متصلة", "كتلة متصلة")
+    return "1 connected block" if n == 1 else f"{n} connected blocks"
+
+
+def orders_word(n_fields, lang):
+    """How many harvest orders exist for n fields (n!), said the way people say it."""
+    import math
+    n = math.factorial(max(1, int(n_fields)))
+    if lang == "ar":
+        if n < 1_000_000:
+            return _count_ar(n, "ترتيب واحد", "ترتيبان", "ترتيبات", "ترتيباً")
+        for div, unit in ((1e15, "ألف تريليون"), (1e12, "تريليون"), (1e9, "مليار"), (1e6, "مليون")):
+            if n >= div:
+                x = n / div
+                return f"نحو {x:.1f} {unit} ترتيب" if x < 10 else f"نحو {x:,.0f} {unit} ترتيب"
+    if n < 1_000_000:
+        return "1 order" if n == 1 else f"{n:,} orders"
+    for div, unit in ((1e15, "thousand trillion"), (1e12, "trillion"), (1e9, "billion"), (1e6, "million")):
+        if n >= div:
+            x = n / div
+            return f"about {x:.1f} {unit} orders" if x < 10 else f"about {x:,.0f} {unit} orders"
+    return f"{n:,} orders"
+
+
 # ---------------------------------------------------------------------------
 # LONGER CONTENT -- the explanations that live inside expanders.
 # Written as small HTML blocks because app.py renders them with
@@ -280,19 +335,21 @@ CONTENT = {
     },
     # "What does this mean?" -- the expander under the Cut-now card.
     "criteria_short": {
-        "en": """<p><b>Dry standing wheat is fuel.</b> A cut field is short stubble — fire finds nothing to burn there, so it works as a firebreak.</p>
-<p><b>Fields close together are connected.</b> If the gap between two fields is narrow enough for fire to cross, Hassad treats them as one block: fire that starts in one can reach the other.</p>
-<p><b>Every day, Hassad measures the largest block.</b> For each day of the harvest it looks at the fields still standing and finds the largest connected block — the most wheat one fire could burn in one go. The aim is to keep that block as small as possible, every day, until the last field is cut.</p>
-<p><b>It checks every possible order.</b> For 11 fields that is almost 40 million orders. Hassad tries them all and picks the one that keeps the blocks smallest across the whole season. This is not a guess or a rule of thumb: it is the best order there is, found in a fraction of a second. It assumes one harvester cutting about 8 hectares a day, so a bigger field simply takes more days.</p>
-<p><b>What the line under "Cut now" means.</b> "Fire block now 76 ha, after 71 ha" says: today, the biggest connected stretch of standing wheat is 76 hectares. Once you cut this field, the biggest stretch left is 71 hectares. That is what you gain by cutting this field first.</p>
-<p><b>When you mark a field cut.</b> Hassad treats it as a firebreak from now on — whichever field it is, whatever order you actually cut in — and works out the best order for the fields that remain, starting from where the harvester is. Undo puts it back.</p>
-<p><b>The two gap rules.</b> How wide a gap fire can jump depends on what grows in it. In a dry year the grass and scrub between fields is dead by June and carries fire, so Hassad counts fields up to 175 m apart as connected. In a wet year those gaps stay green and stop fire, so only fields within 100 m count. Satellite pictures of these same fields showed both cases in the last three summers. Hassad uses the dry-year rule unless told otherwise, because a plan that is safe when the gaps burn is safe either way — and the reverse is not true.</p>""",
-        "ar": """<p><b>القمح القائم الجاف وقود.</b> أما الحقل المحصود فقشّ قصير لا تجد النار فيه ما تأكله، فيصبح حاجزاً يوقفها.</p>
-<p><b>الحقول المتقاربة متصلة.</b> إذا كانت الفجوة بين حقلين ضيقة بما يكفي لتعبرها النار، عدّهما «حصاد» كتلة واحدة: فالنار التي تبدأ في أحدهما تصل إلى الآخر.</p>
-<p><b>كل يوم، يقيس «حصاد» أكبر كتلة.</b> في كل يوم من أيام الحصاد ينظر إلى الحقول التي ما زالت قائمة ويجد أكبر كتلة متصلة منها، أي أكبر مساحة قمح يمكن أن يحرقها حريق واحد دفعة واحدة. الهدف أن تبقى هذه الكتلة أصغر ما يمكن، كل يوم، حتى يُحصد آخر حقل.</p>
-<p><b>يجرّب كل ترتيب ممكن.</b> لأحد عشر حقلاً يقارب ذلك 40 مليون ترتيب. يجرّبها «حصاد» كلها ويختار الترتيب الذي تبقى فيه الكتل أصغر على مدار الموسم كله. ليس هذا تخميناً ولا قاعدة تقريبية، بل أفضل ترتيب موجود، يجده التطبيق في أقل من ثانية. ويفترض حصّادة واحدة تقطع نحو 8 هكتارات في اليوم، فالحقل الأكبر يأخذ أياماً أكثر لا غير.</p>
-<p><b>ماذا يعني السطر تحت «احصد الآن»؟</b> «أكبر كتلة قابلة للاحتراق: 76 هكتار الآن، وتصبح 71 هكتار بعد حصاده» يعني: اليوم، أكبر مساحة متصلة من القمح القائم هي 76 هكتاراً. وبعد أن تحصد هذا الحقل، تصبح أكبر مساحة متبقية 71 هكتاراً. هذا ما تكسبه بحصاد هذا الحقل أولاً.</p>
-<p><b>عندما تحدّد حقلاً على أنه محصود.</b> يعامله «حصاد» من الآن فصاعداً كحاجز للنار — أيّ حقل كان، وبأيّ ترتيب حصدته فعلاً — ثم يحسب أفضل ترتيب للحقول الباقية انطلاقاً من مكان الحصّادة. وزر «تراجع» يعيد الأمر كما كان.</p>
-<p><b>قاعدتا الفجوة.</b> المسافة التي تقفزها النار تتوقّف على ما ينمو بين الحقول. في السنة الجافة يكون العشب والشجيرات بين الحقول قد يبس بحلول حزيران وينقل النار، لذا يعدّ «حصاد» الحقول التي تفصلها مسافة تصل إلى 175 متراً متصلة. وفي السنة الرطبة تبقى تلك الفجوات خضراء وتوقف النار، فلا تُعدّ متصلة إلا الحقول التي تفصلها مسافة 100 متر أو أقل. وقد أظهرت صور الأقمار الصناعية لهذه الحقول نفسها الحالتين في المواسم الصيفية الثلاثة الأخيرة. يعتمد «حصاد» قاعدة السنة الجافة ما لم يُطلب غير ذلك، لأن الخطة الآمنة حين تشتعل الفجوات آمنة في الحالتين، والعكس غير صحيح.</p>""",
+        "en": """<ol>
+<li><b>Dry standing wheat is fuel.</b> A cut field is short stubble: fire finds nothing to burn there, so it works as a firebreak.</li>
+<li><b>Fields close together are connected.</b> Under this year's rule fire can cross a gap of up to {gap} m, so your fields, {fields} in all, form {blocks} today.</li>
+<li><b>Every day, Hassad measures the largest block.</b> Today it is {before} ha. Once field {f} is cut it is {after} ha. The aim is to keep that number as small as possible on every day until the last field is cut.</li>
+<li><b>It checks every possible order.</b> For {fields} that is {orders}. Hassad tries them all and picks the one that keeps the blocks smallest across the whole season. It assumes one harvester cutting about {rate} ha a day, so a bigger field simply takes more days (field {f}: {days}).</li>
+<li><b>When you mark a field cut,</b> Hassad treats it as a firebreak from then on, whatever order you actually cut in, and re-plans the fields that remain from where the harvester is. Undo puts it back.</li>
+<li><b>The two gap rules.</b> In a dry year the grass between fields is dead by June and carries fire, so fields up to {dry} m apart count as connected. In a wet year the gaps stay green, so only fields within {wet} m count. Hassad is using the {rule} rule now ({gap} m): a plan that is safe when the gaps burn is safe either way.</li>
+</ol>""",
+        "ar": """<ol>
+<li><b>القمح القائم الجاف وقود.</b> أما الحقل المحصود فقشّ قصير لا تجد النار فيه ما تأكله، فيصبح حاجزاً يوقفها.</li>
+<li><b>الحقول المتقاربة متصلة.</b> بقاعدة هذه السنة تعبر النار فجوة تصل إلى {gap} م، ولذلك تشكّل حقولك، وهي {fields}، اليوم {blocks}.</li>
+<li><b>كل يوم يقيس «حصاد» أكبر كتلة.</b> اليوم هي {before} هكتار، وبعد حصاد حقل {f} تصبح {after} هكتار. الهدف أن يبقى هذا الرقم أصغر ما يمكن في كل يوم حتى يُحصد آخر حقل.</li>
+<li><b>يجرّب كل ترتيب ممكن.</b> مع {fields} يوجد {orders}. يجرّبها «حصاد» كلها ويختار الترتيب الذي تبقى فيه الكتل أصغر على مدار الموسم كله. ويفترض حصّادة واحدة تقطع نحو {rate} هكتارات في اليوم، فالحقل الأكبر يأخذ أياماً أكثر (حقل {f}: {days}).</li>
+<li><b>عندما تحدّد حقلاً على أنه محصود،</b> يعامله «حصاد» من الآن فصاعداً كحاجز للنار، بأيّ ترتيب حصدته فعلاً، ثم يحسب أفضل ترتيب للحقول الباقية انطلاقاً من مكان الحصّادة. وزر «تراجع» يعيد الأمر كما كان.</li>
+<li><b>قاعدتا الفجوة.</b> في السنة الجافة يكون العشب بين الحقول قد يبس بحلول حزيران وينقل النار، فتُعدّ الحقول التي تفصلها مسافة تصل إلى {dry} م متصلة. وفي السنة الرطبة تبقى الفجوات خضراء، فلا تُعدّ متصلة إلا الحقول التي تفصلها {wet} م أو أقل. يعمل «حصاد» الآن بقاعدة {rule} ({gap} م): الخطة الآمنة حين تشتعل الفجوات آمنة في الحالتين.</li>
+</ol>""",
     },
 }

@@ -18,21 +18,33 @@ All the thinking lives in app_logic.py (tested separately). The skin lives in
 hassad_style.py. This file is layout.
 """
 
+import math
+import os
 import urllib.parse
 
 import altair as alt
 import folium
 from folium.plugins import Draw
+import networkx as nx
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_folium import st_folium
 
 import app_logic as logic
 import hassad_style as skin
-from i18n import CONTENT, FIELD_LABELS, STRINGS, days_word, label
+from i18n import (CONTENT, FIELD_LABELS, STRINGS, blocks_word, days_word, fields_word, label,
+                  orders_word)
+from simulate import HARVEST_RATE_HA_PER_DAY
 
 st.set_page_config(page_title="Hassad", page_icon="favicon.png", layout="centered",
                    initial_sidebar_state="collapsed")
+
+# The browser reports its window size through a tiny invisible component
+# (viewport/index.html), so the map is rendered at the right height for a phone,
+# a tablet or a laptop; the two-pane laptop layout itself is CSS (hassad_style).
+_viewport = components.declare_component(
+    "hassad_viewport", path=os.path.join(os.path.dirname(os.path.abspath(__file__)), "viewport"))
 
 # ---------------------------------------------------------------------------
 # STATE
@@ -47,7 +59,7 @@ ss.setdefault("selected", set(logic.field_names()) if ss.mode == "demo" else set
 ss.setdefault("plan", None)
 ss.setdefault("harvested", [])
 ss.setdefault("screen", "fields")
-ss.setdefault("page", "about" if qp.get("page") == "about" else "plan")
+ss.setdefault("page", qp.get("page") if qp.get("page") in ("about", "privacy") else "plan")
 ss.setdefault("focus", None)
 ss.setdefault("undo", None)
 ss.setdefault("last_click", None)
@@ -147,6 +159,17 @@ def go_about():
     qp["page"] = "about"
 
 
+def go_privacy():
+    ss.page = "privacy"
+    qp["page"] = "privacy"
+
+
+def leave_plan_url():
+    """Back on the Fields screen the address describes no plan any more."""
+    for k in ("f", "cut"):
+        qp.pop(k, None)
+
+
 def toggle_lang():
     ss.lang = OTHER
     if ss.plan is not None:
@@ -175,9 +198,12 @@ def go_judge():
     make_plan()
 
 
-# ---- restore from the URL (refresh, forwarded link) or the demo shortcuts
+# ---- restore from the URL (refresh, forwarded link) or the demo shortcuts.
+# Only when the session starts: a later rerun must never rebuild a plan from a
+# stale address (that is how switching to "draw" used to land on the old plan).
 judge = "judge" in qp or "auto" in qp
-if ss.plan is None and ss.page == "plan":
+if not ss.get("booted"):
+    ss.booted = True
     if "f" in qp and qp["f"]:
         ss.mode = "demo"
         ss.selected = {f for f in qp["f"].split(",") if f in logic.field_names()} or ss.selected
@@ -193,6 +219,9 @@ if ss.plan is None and ss.page == "plan":
 # ---------------------------------------------------------------------------
 
 skin.inject(RTL)
+VP = _viewport(key="viewport", default={"w": 0, "h": 0}) or {}
+WIDE = VP.get("w", 0) >= 960                       # the CSS two-pane breakpoint
+MAP_H = max(440, min(860, int(VP.get("h", 0)) - 132)) if WIDE else 400
 
 if ss.flash:
     st.toast(ss.flash)
@@ -217,7 +246,7 @@ with st.container(key="row_hdr"):
             if b1.button(STRINGS[OTHER]["lang_name"], key="lang_btn", type="tertiary"):
                 toggle_lang()
                 st.rerun()
-            if ss.page == "about":
+            if ss.page in ("about", "privacy"):
                 if b2.button(T["back_plan"], key="back_top", type="tertiary"):
                     go_plan()
                     st.rerun()
@@ -229,6 +258,29 @@ if on_fields:
     html(f'<p class="tagline">{T["tagline"]}</p>')
 else:
     html('<hr class="hdr-rule">')
+
+# ---------------------------------------------------------------------------
+# FOOTER (every screen) and the PRIVACY PAGE
+# ---------------------------------------------------------------------------
+
+def footer():
+    with st.container(key="footer"):
+        f1, f2 = st.columns([3, 1], gap="small", vertical_alignment="center")
+        f1.markdown(f'<p class="foot">{T["footer_owner"]}</p>', unsafe_allow_html=True)
+        if f2.button(T["privacy"], key="privacy_btn", type="tertiary"):
+            go_privacy()
+            st.rerun()
+
+
+if ss.page == "privacy":
+    import privacy
+    html(f'<div class="step"><h2>{T["privacy_title"]}</h2></div>')
+    with st.container(key="about" if RTL else "about_en"):
+        privacy.render(ss.lang)
+    if st.button(T["back_plan"], key="back_bottom", type="tertiary"):
+        go_plan()
+        st.rerun()
+    st.stop()
 
 # ---------------------------------------------------------------------------
 # ABOUT PAGE
@@ -261,6 +313,7 @@ if ss.page == "about":
     if st.button(T["back_plan"], key="back_bottom", type="tertiary"):
         go_plan()
         st.rerun()
+    footer()
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -288,8 +341,7 @@ def build_map(drawing=False):
     lat0 = sum(f.poly_ll.centroid.y for f in base) / len(base)
     lon0 = sum(f.poly_ll.centroid.x for f in base) / len(base)
     m = folium.Map(location=[lat0, lon0], zoom_start=14, tiles=None,
-                   zoom_control=CTRL_POS if drawing else False,
-                   control_scale=False, scrollWheelZoom=False)
+                   zoom_control=CTRL_POS, control_scale=False, scrollWheelZoom=False)
     m.get_root().header.add_child(MAP_HEAD)
     if fields:
         sel = [f for f in fields if f.name in ss.selected] or fields
@@ -306,7 +358,15 @@ def build_map(drawing=False):
         tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/"
               "MapServer/tile/{z}/{y}/{x}", attr="Esri World Imagery", control=False).add_to(m)
     if drawing:
-        Draw(export=False, position=CTRL_POS,
+        # the fields drawn earlier are seeded into the tool's own layer, so coming
+        # back to this screen keeps them editable and a new shape is added to them
+        seed = folium.FeatureGroup(name="drawn")
+        for f in fields:
+            folium.Polygon(locations=[(lat, lon) for lon, lat in f.poly_ll.exterior.coords],
+                           color=skin.INK, weight=1.1, fill=True, fill_color=skin.STRAW,
+                           fill_opacity=0.55).add_to(seed)
+        seed.add_to(m)
+        Draw(export=False, position=CTRL_POS, feature_group=seed,
              draw_options={"polyline": False, "circle": False, "marker": False,
                            "circlemarker": False, "rectangle": True,
                            "polygon": {"allowIntersection": False, "showArea": True}},
@@ -316,7 +376,9 @@ def build_map(drawing=False):
         pts = [(lat, lon) for lon, lat in f.poly_ll.exterior.coords]
         mine, cut, is_today = f.name in ss.selected, f.name in ss.harvested, f.name == today
         name = label(f.name)
-        if not mine:
+        if drawing:                               # the polygon lives in the draw layer
+            txt = badge(name, skin.STRAW, skin.INK, "solid", skin.INK)
+        elif not mine:
             folium.Polygon(locations=pts, color=skin.PAPER, weight=1.2, dash_array="4 3", fill=True,
                            fill_color=skin.STRAW, fill_opacity=0.25).add_to(fg)
             txt = badge(name, skin.PAPER, skin.MUTED, "dashed", skin.RULE)
@@ -340,7 +402,87 @@ def build_map(drawing=False):
         chars = len(txt.split(">")[-2].split("<")[0]) if ">" in txt else 3
         folium.Marker([lat, lon], icon=folium.DivIcon(
             html=txt, icon_anchor=(chars * 4 + 6, 9))).add_to(fg)
+    if order:
+        draw_route(fg, order, {f.name: f for f in fields})
     return m, fg
+
+
+# ---- the harvester's way: along each field's long axis, then on to the next field
+def _axis_ends(poly_ll):
+    """The two ends of the field's long axis as (lat, lon), pulled a little inward."""
+    rect = poly_ll.minimum_rotated_rectangle
+    pts = list(rect.exterior.coords)[:4]
+    if len(pts) < 4:                              # degenerate shape: use the bounds
+        x0, y0, x1, y1 = poly_ll.bounds
+        pts = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    k = math.cos(math.radians(pts[0][1]))
+    sides = [(pts[i], pts[(i + 1) % 4]) for i in range(4)]
+    lens = [math.hypot((b[0] - a[0]) * k, b[1] - a[1]) for a, b in sides]
+    i = lens.index(min(lens))                     # a short side; its opposite is i + 2
+    (a1, b1), (a2, b2) = sides[i], sides[(i + 2) % 4]
+    m1 = ((a1[0] + b1[0]) / 2, (a1[1] + b1[1]) / 2)
+    m2 = ((a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2)
+    e1 = (m1[1] + 0.14 * (m2[1] - m1[1]), m1[0] + 0.14 * (m2[0] - m1[0]))
+    e2 = (m2[1] + 0.14 * (m1[1] - m2[1]), m2[0] + 0.14 * (m1[0] - m2[0]))
+    return e1, e2
+
+
+def _dist(a, b):
+    k = math.cos(math.radians(a[0]))
+    return math.hypot((a[1] - b[1]) * k, a[0] - b[0])
+
+
+def _line(pts, **kw):
+    """A route line that taps pass through (folium drops Leaflet's interactive flag)."""
+    pl = folium.PolyLine(pts, **kw)
+    pl.options["interactive"] = False
+    return pl
+
+
+def _arrowhead(fg, at, frm, size=14, color=None):
+    """A small ink triangle at `at`, pointing away from `frm`."""
+    k = math.cos(math.radians(at[0]))
+    ang = math.degrees(math.atan2(-(at[0] - frm[0]), (at[1] - frm[1]) * k))
+    col = color or skin.INK
+    html = (f"<svg width='{size}' height='{size}' viewBox='0 0 10 10' "
+            f"style='display:block;pointer-events:none;transform:rotate({ang:.0f}deg)'>"
+            f"<polygon points='0,1 10,5 0,9' fill='{col}'/></svg>")
+    folium.Marker(at, icon=folium.DivIcon(html=html, icon_size=(size, size),
+                                          icon_anchor=(size // 2, size // 2))).add_to(fg)
+
+
+def draw_route(fg, order, by_name):
+    """Solid arrow along the long axis of every standing field in harvest order,
+    dashed hops between them, starting from where the harvester stands."""
+    start = None
+    if ss.harvested:
+        pos = ss.machine_at if (ss.balanced and ss.machine_at in ss.harvested) else ss.harvested[-1]
+        if pos in by_name:
+            c = by_name[pos].poly_ll.centroid
+            start = (c.y, c.x)
+    prev_exit = start
+    for k, name in enumerate(order):
+        if name not in by_name:
+            continue
+        e1, e2 = _axis_ends(by_name[name].poly_ll)
+        if prev_exit is None:
+            nxt = by_name.get(order[k + 1]) if k + 1 < len(order) else None
+            if nxt is not None:                   # leave the field on the side of the next one
+                c = nxt.poly_ll.centroid
+                entry, exit_ = (e2, e1) if _dist(e1, (c.y, c.x)) < _dist(e2, (c.y, c.x)) else (e1, e2)
+            else:
+                entry, exit_ = e1, e2
+        else:                                     # enter on the side the harvester comes from
+            entry, exit_ = (e1, e2) if _dist(e1, prev_exit) <= _dist(e2, prev_exit) else (e2, e1)
+            first = k == 0
+            _line([prev_exit, entry], color=skin.INK, weight=2.5 if first else 1.5,
+                  opacity=0.9 if first else 0.55, dash_array="4 7").add_to(fg)
+            if first:
+                _arrowhead(fg, entry, prev_exit, size=12)
+        first = k == 0
+        _line([entry, exit_], color=skin.INK, weight=3.5 if first else 2.5, opacity=0.95).add_to(fg)
+        _arrowhead(fg, exit_, entry, size=16 if first else 13)
+        prev_exit = exit_
 
 
 def tapped_field(out):
@@ -352,8 +494,10 @@ def tapped_field(out):
 
 
 def show_map(m, fg, key, height, returned):
+    # the key carries the height: a map that changes size (the laptop layout after
+    # the viewport is known) is rebuilt, so the tiles cover the whole frame
     with st.container(key="map_frame"):
-        return st_folium(m, key=key, height=height, width="stretch",
+        return st_folium(m, key=f"{key}_{height}", height=height, width="stretch",
                          feature_group_to_add=fg if len(fg._children) else None,
                          returned_objects=returned)
 
@@ -361,6 +505,17 @@ def show_map(m, fg, key, height, returned):
 def step(title, over=None):
     o = f'<span class="over">{over}</span>' if over else ""
     html(f'<div class="step">{o}<h2>{title}</h2></div>')
+
+
+def count_line(n):
+    """'1 field' / '11 fields' / 'عدد الحقول: 11'."""
+    return fields_word(n, "en") if ss.lang == "en" else T["n_fields"].format(n=n)
+
+
+def _chip_sort(name):
+    """Fields by their shown number (the data id 'nte' shows as 3)."""
+    shown = label(name)
+    return (0, int(shown)) if shown.isdigit() else (1, shown)
 
 
 def money(x):
@@ -381,8 +536,10 @@ if ss.screen == "fields":
     new_mode = "custom" if mode == T["mode_draw"] else "demo"
     if new_mode != ss.mode:
         ss.mode, ss.plan, ss.harvested, ss.last_click = new_mode, None, [], None
-        ss.custom_fields = []
+        ss.custom_fields, ss.undo, ss.focus = [], None, None
         ss.selected = set(logic.field_names()) if new_mode == "demo" else set()
+        ss.field_chips = sorted(ss.selected, key=_chip_sort)
+        leave_plan_url()
         if new_mode == "custom":
             qp["mode"] = "draw"
         else:
@@ -396,25 +553,39 @@ if ss.screen == "fields":
             st.rerun()
         step(T["fields_title"], T["step1"])
         m, fg = build_map()
-        out = show_map(m, fg, "hassad_map", 400, ["last_object_clicked"])
+        out = show_map(m, fg, "hassad_fields", MAP_H, ["last_object_clicked"])
         name = tapped_field(out)
         if name:
             ss.selected ^= {name}
+            ss.field_chips = sorted(ss.selected, key=_chip_sort)
             st.rerun()
+        ha_sel = sum(f.area_ha for f in fields if f.name in ss.selected)
         with st.container(key="row_count"):
             c1, c2, c3 = st.columns([2, 1, 1], gap="small", vertical_alignment="center")
-            c1.markdown(f'<div class="count">{T["n_fields"].format(n=len(ss.selected))}</div>',
-                        unsafe_allow_html=True)
+            c1.markdown(f'<div class="count">{count_line(len(ss.selected))}'
+                        f'<span class="ha">{bdi(f"{ha_sel:.0f}")} {T["ha"]}</span></div>', unsafe_allow_html=True)
             with c2:
                 with st.container(key="small_all"):
                     if st.button(T["all"], key="all_btn", width="stretch"):
                         ss.selected = set(logic.field_names())
+                        ss.field_chips = sorted(ss.selected, key=_chip_sort)
                         st.rerun()
             with c3:
                 with st.container(key="small_none"):
                     if st.button(T["none"], key="none_btn", width="stretch"):
                         ss.selected = set()
+                        ss.field_chips = []
                         st.rerun()
+        # the same choice as a row of chips: each field with its size, pressed = chosen
+        ha_of_all = {f.name: f.area_ha for f in fields}
+        if "field_chips" not in ss:
+            ss.field_chips = sorted(ss.selected, key=_chip_sort)
+        chips = st.pills("fields", sorted(logic.field_names(), key=_chip_sort), selection_mode="multi",
+                         format_func=lambda n: f"{label(n)} · {ha_of_all.get(n, 0):.1f} {T['ha']}",
+                         key="field_chips", label_visibility="collapsed", width="stretch")
+        if set(chips or []) != ss.selected:
+            ss.selected = set(chips or [])
+            st.rerun()
         ready = bool(ss.selected)
         drawn = []
     else:
@@ -423,12 +594,15 @@ if ss.screen == "fields":
         step(T["draw_title"], T["step1"])
         html(f'<p class="hint">{T["draw_hint"]}</p>')
         m, fg = build_map(drawing=True)
-        out = show_map(m, fg, "hassad_draw", 400, ["all_drawings"])
-        drawings = (out or {}).get("all_drawings") or []
-        drawn = logic.custom_fields_from_geojson(drawings)
+        out = show_map(m, fg, "hassad_draw", MAP_H, ["all_drawings"])
+        drawings = (out or {}).get("all_drawings")
+        # the tool reports only after a drawing event: until then the fields drawn
+        # earlier (seeded into the tool) are the current set
+        drawn = logic.custom_fields_from_geojson(drawings) if drawings is not None else list(ss.custom_fields)
         ss.drawn_any = bool(drawn)
         if drawn:
-            html(f'<div class="count">{T["n_fields"].format(n=len(drawn))}</div>')
+            ha_drawn = sum(f.area_ha for f in drawn)
+            html(f'<div class="count">{count_line(len(drawn))}<span class="ha">{bdi(f"{ha_drawn:.1f}")} {T["ha"]}</span></div>')
         else:
             html(f'<p class="hint">{T["drawn_none"]}</p>')
         ready = bool(drawn)
@@ -441,6 +615,7 @@ if ss.screen == "fields":
         st.rerun()
     if not ready:
         html(f'<p class="hint">{T["pick_first"] if ss.mode == "demo" else T["draw_first"]}</p>')
+    footer()
 
 # ===========================================================================
 # SCREEN B -- TODAY
@@ -448,7 +623,7 @@ if ss.screen == "fields":
 
 else:
     m, fg = build_map()
-    out = show_map(m, fg, "hassad_map", 380, ["last_object_clicked"])
+    out = show_map(m, fg, "hassad_today", MAP_H if WIDE else 380, ["last_object_clicked"])
     name = tapped_field(out)
     if name and name in ss.selected:
         ss.focus = name
@@ -495,7 +670,17 @@ else:
              f'<div class="sub">{bdi(row["Hectares"])} {U} · {days_word(row["Days"], ss.lang)}</div>'
              f'<div class="trust">{trust}</div></div>')
         with st.expander(T["what_title"]):
-            html(CONTENT["criteria_short"][ss.lang])
+            G = plan["G"]
+            standing = [n for n in G.nodes if n not in ss.harvested]
+            blocks = nx.number_connected_components(G.subgraph(standing)) if standing else 0
+            dry_m, wet_m = (int(v) for v in logic.GAP_RULES.values())
+            html(CONTENT["criteria_short"][ss.lang].format(
+                gap=bdi(int(plan["threshold"])), fields=bdi(fields_word(len(G.nodes), ss.lang)),
+                blocks=blocks_word(blocks, ss.lang), before=bdi(before), after=bdi(after),
+                f=bdi(label(today)), orders=orders_word(len(G.nodes), ss.lang),
+                rate=bdi(int(HARVEST_RATE_HA_PER_DAY)), days=days_word(row["Days"], ss.lang),
+                dry=bdi(dry_m), wet=bdi(wet_m),
+                rule=T["rule_dry"] if plan["threshold"] >= dry_m else T["rule_wet"]))
         if st.button(T["is_cut"].format(n=label(today)), type="primary", width="stretch"):
             set_cut(today, True)
             st.rerun()
@@ -549,82 +734,85 @@ else:
                            width="stretch", on_click="ignore")
     if st.button(T["my_fields"], type="tertiary", key="my_fields_btn"):
         ss.screen, ss.focus, ss.last_click = "fields", None, None
+        leave_plan_url()
         st.rerun()
 
     # ---- NUMBERS: for judges only (/?judge=1); the farmer never sees engineering
     if judge:
-        html('<hr class="rule">')
-        with st.expander(T["numbers"], expanded=True):
-            e = logic.economics(plan)
-            html(f'<div class="econ"><div class="t">{T["econ_title"]}</div>'
-                 f'<div class="line">{T["econ_line"].format(ha=bdi(f"{e['total_ha']:.0f}"), usd="<b>" + bdi(money(e["value_usd"])) + "</b>")}</div>'
-                 f'<div class="line"><b>{T["econ_cost"]}</b></div>'
-                 f'<div class="note">{T["econ_note"].format(y=bdi(e["yield_t_per_ha"]), p=bdi(f"{e['price_usd_per_t']:.0f}"))}</div></div>')
-            if not plan.get("done") and e["delta_ha_per_event"] > 0:
-                html(f'<div class="econ"><div class="t">{T["econ_event_title"]}</div>'
-                     f'<div class="line">{T["econ_event_line"].format(plan=bdi(f"{e['mean_block_plan_ha']:.0f}"), naive=bdi(f"{e['mean_block_naive_ha']:.0f}"))}</div>'
-                     f'<div class="line"><b>{T["econ_event_saving"].format(ha=bdi(f"{e['delta_ha_per_event']:.1f}"), usd=bdi(money(e["delta_usd_per_event"])))}</b></div></div>')
-                chance = st.slider(T["econ_chance"], 0, 50, 10, step=5, format="%d%%")
-                html(f'<div class="econ"><div class="t">'
-                     f'{T["econ_expected"].format(usd=bdi(money(logic.expected_saving_usd(e, chance))))}</div>'
-                     f'<div class="note">{T["econ_expected_note"]}</div></div>')
+        with st.container(key="numbers"):          # keyed so the laptop layout can give it the full width
+            html('<hr class="rule">')
+            with st.expander(T["numbers"], expanded=True):
+                e = logic.economics(plan)
+                html(f'<div class="econ"><div class="t">{T["econ_title"]}</div>'
+                     f'<div class="line">{T["econ_line"].format(ha=bdi(f"{e['total_ha']:.0f}"), usd="<b>" + bdi(money(e["value_usd"])) + "</b>")}</div>'
+                     f'<div class="line"><b>{T["econ_cost"]}</b></div>'
+                     f'<div class="note">{T["econ_note"].format(y=bdi(e["yield_t_per_ha"]), p=bdi(f"{e['price_usd_per_t']:.0f}"))}</div></div>')
+                if not plan.get("done") and e["delta_ha_per_event"] > 0:
+                    html(f'<div class="econ"><div class="t">{T["econ_event_title"]}</div>'
+                         f'<div class="line">{T["econ_event_line"].format(plan=bdi(f"{e['mean_block_plan_ha']:.0f}"), naive=bdi(f"{e['mean_block_naive_ha']:.0f}"))}</div>'
+                         f'<div class="line"><b>{T["econ_event_saving"].format(ha=bdi(f"{e['delta_ha_per_event']:.1f}"), usd=bdi(money(e["delta_usd_per_event"])))}</b></div></div>')
+                    chance = st.slider(T["econ_chance"], 0, 50, 10, step=5, format="%d%%")
+                    html(f'<div class="econ"><div class="t">'
+                         f'{T["econ_expected"].format(usd=bdi(money(logic.expected_saving_usd(e, chance))))}</div>'
+                         f'<div class="note">{T["econ_expected_note"]}</div></div>')
 
-            if not plan.get("done"):
-                opt, naive = plan["optimal"], plan["naive"]
-                html(f'<div class="stats">'
-                     f'<div class="stat"><div class="l">{T["m_exposure"]}</div><div class="v fire">{bdi(T["m_exposure_v"].format(pct=f"{plan['pct_vs_naive']:.0f}"))}</div></div>'
-                     f'<div class="stat"><div class="l">{T["m_season"]}</div><div class="v">{bdi(opt.season_days)}<span class="u">{T["unit_days"]}</span></div></div>'
-                     f'<div class="stat"><div class="l">{T["m_driving"]}</div><div class="v">{bdi(f"{opt.travel_cost_km:.1f}")}<span class="u">{T["unit_km"]}</span></div></div>'
-                     f'</div>')
-                with st.container(key="judge_en"):
-                    curve = pd.DataFrame({
-                        "day": [x.day for x in opt.days],
-                        T["s_hassad"]: [x.cumulative_risk for x in opt.days],
-                        T["s_naive"]: [x.cumulative_risk for x in naive.days],
-                        T["s_greedy"]: [x.cumulative_risk for x in plan["greedy"].days],
-                    }).set_index("day")
-                    # one line per strategy; the legend runs vertically so no label is
-                    # ever cut off on a phone (st.line_chart clips a one-row legend)
-                    series = [T["s_hassad"], T["s_naive"], T["s_greedy"]]
-                    long = curve.reset_index().melt("day", var_name="series", value_name="exposure")
-                    st.altair_chart(
-                        alt.Chart(long).mark_line(strokeWidth=2.5).encode(
-                            x=alt.X("day:Q", title=None),
-                            y=alt.Y("exposure:Q", title=None),
-                            color=alt.Color("series:N", title=None, sort=series,
-                                            scale=alt.Scale(domain=series,
-                                                            range=[skin.GOLD, skin.RULE, skin.STUBBLE]),
-                                            legend=alt.Legend(orient="bottom", direction="vertical",
-                                                              labelLimit=600, symbolType="stroke",
-                                                              symbolStrokeWidth=3)),
-                        ).properties(height=200),
-                        width="stretch", height=330)   # 200 px plot + axis + three legend rows
-                    st.caption(T["chart_caption"])
-                    table = pd.DataFrame(disp_rows, columns=["Day", "Field", "Hectares",
-                                                             "Largest block after (ha)", "Why this field now"])
-                    table.columns = [T["col_day"], T["col_field"], T["col_ha"], T["col_block_after"], T["col_why"]]
-                    st.dataframe(table, hide_index=True, width="stretch")
-                    st.download_button(T["csv"], logic.schedule_csv(disp_rows),
-                                       file_name="hassad_schedule.csv", mime="text/csv",
-                                       type="tertiary", key="csv_btn", on_click="ignore")
+                if not plan.get("done"):
+                    opt, naive = plan["optimal"], plan["naive"]
+                    html(f'<div class="stats">'
+                         f'<div class="stat"><div class="l">{T["m_exposure"]}</div><div class="v fire">{bdi(T["m_exposure_v"].format(pct=f"{plan['pct_vs_naive']:.0f}"))}</div></div>'
+                         f'<div class="stat"><div class="l">{T["m_season"]}</div><div class="v">{bdi(opt.season_days)}<span class="u">{T["unit_days"]}</span></div></div>'
+                         f'<div class="stat"><div class="l">{T["m_driving"]}</div><div class="v">{bdi(f"{opt.travel_cost_km:.1f}")}<span class="u">{T["unit_km"]}</span></div></div>'
+                         f'</div>')
+                    with st.container(key="judge_en"):
+                        curve = pd.DataFrame({
+                            "day": [x.day for x in opt.days],
+                            T["s_hassad"]: [x.cumulative_risk for x in opt.days],
+                            T["s_naive"]: [x.cumulative_risk for x in naive.days],
+                            T["s_greedy"]: [x.cumulative_risk for x in plan["greedy"].days],
+                        }).set_index("day")
+                        # one line per strategy; the legend runs vertically so no label is
+                        # ever cut off on a phone (st.line_chart clips a one-row legend)
+                        series = [T["s_hassad"], T["s_naive"], T["s_greedy"]]
+                        long = curve.reset_index().melt("day", var_name="series", value_name="exposure")
+                        st.altair_chart(
+                            alt.Chart(long).mark_line(strokeWidth=2.5).encode(
+                                x=alt.X("day:Q", title=None),
+                                y=alt.Y("exposure:Q", title=None),
+                                color=alt.Color("series:N", title=None, sort=series,
+                                                scale=alt.Scale(domain=series,
+                                                                range=[skin.GOLD, skin.RULE, skin.STUBBLE]),
+                                                legend=alt.Legend(orient="bottom", direction="vertical",
+                                                                  labelLimit=600, symbolType="stroke",
+                                                                  symbolStrokeWidth=3)),
+                            ).properties(height=200),
+                            width="stretch", height=330)   # 200 px plot + axis + three legend rows
+                        st.caption(T["chart_caption"])
+                        table = pd.DataFrame(disp_rows, columns=["Day", "Field", "Hectares",
+                                                                 "Largest block after (ha)", "Why this field now"])
+                        table.columns = [T["col_day"], T["col_field"], T["col_ha"], T["col_block_after"], T["col_why"]]
+                        st.dataframe(table, hide_index=True, width="stretch")
+                        st.download_button(T["csv"], logic.schedule_csv(disp_rows),
+                                           file_name="hassad_schedule.csv", mime="text/csv",
+                                           type="tertiary", key="csv_btn", on_click="ignore")
 
-            html(f'<p class="hint">{T["model_switches"]}</p>')
-            rule = st.segmented_control(T["gap_rule"], [T["gap_dry"], T["gap_wet"]],
-                                        default=T["gap_dry"] if ss.dry_year else T["gap_wet"],
-                                        width="stretch", key="gap_seg")
-            obj = st.segmented_control(T["objective"], [T["obj_fire"], T["obj_driving"]],
-                                       default=T["obj_driving"] if ss.balanced else T["obj_fire"],
-                                       width="stretch", key="obj_seg")
-            new_dry = rule != T["gap_wet"]
-            new_bal = obj == T["obj_driving"]
-            mach = ss.machine_at
-            if new_bal and ss.harvested:
-                mach = st.selectbox(T["machine_at"], ss.harvested, format_func=label,
-                                    index=ss.harvested.index(ss.machine_at)
-                                    if ss.machine_at in ss.harvested else len(ss.harvested) - 1)
-            if (new_dry, new_bal, mach) != (ss.dry_year, ss.balanced, ss.machine_at):
-                ss.dry_year, ss.balanced, ss.machine_at = new_dry, new_bal, mach
-                rebuild_plan()
-                st.rerun()
-            st.caption(T["footer"].format(n=len(plan["G"].nodes), m=f"{plan['threshold']:.0f}",
-                                          mode=T["fire_driving"] if plan["balanced"] else T["fire_only"]))
+                html(f'<p class="hint">{T["model_switches"]}</p>')
+                rule = st.segmented_control(T["gap_rule"], [T["gap_dry"], T["gap_wet"]],
+                                            default=T["gap_dry"] if ss.dry_year else T["gap_wet"],
+                                            width="stretch", key="gap_seg")
+                obj = st.segmented_control(T["objective"], [T["obj_fire"], T["obj_driving"]],
+                                           default=T["obj_driving"] if ss.balanced else T["obj_fire"],
+                                           width="stretch", key="obj_seg")
+                new_dry = rule != T["gap_wet"]
+                new_bal = obj == T["obj_driving"]
+                mach = ss.machine_at
+                if new_bal and ss.harvested:
+                    mach = st.selectbox(T["machine_at"], ss.harvested, format_func=label,
+                                        index=ss.harvested.index(ss.machine_at)
+                                        if ss.machine_at in ss.harvested else len(ss.harvested) - 1)
+                if (new_dry, new_bal, mach) != (ss.dry_year, ss.balanced, ss.machine_at):
+                    ss.dry_year, ss.balanced, ss.machine_at = new_dry, new_bal, mach
+                    rebuild_plan()
+                    st.rerun()
+                st.caption(T["footer"].format(n=len(plan["G"].nodes), m=f"{plan['threshold']:.0f}",
+                                              mode=T["fire_driving"] if plan["balanced"] else T["fire_only"]))
+    footer()

@@ -69,7 +69,8 @@ bdi{unicode-bidi:isolate;}
 [data-testid="stMarkdownContainer"] .step h2,[data-testid="stMarkdownContainer"] h2.step{font-family:var(--serif);font-variation-settings:"opsz" 48;font-weight:600;
  font-size:24px;line-height:1.2;margin:0!important;padding:0!important;color:var(--ink);}
 [data-testid="stMarkdownContainer"] .hint,[data-testid="stMarkdownContainer"] .note{font-family:var(--sans);color:var(--muted);font-size:15px;line-height:1.45;margin:4px 0 6px;}
-[data-testid="stMarkdownContainer"] .count{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);margin:0;line-height:44px;}
+[data-testid="stMarkdownContainer"] .count{font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);margin:0;line-height:1.2;white-space:nowrap;}
+[data-testid="stMarkdownContainer"] .count .ha{display:block;font-size:15px;font-weight:400;color:var(--muted);margin-top:2px;}
 .rule{border:0;border-top:1px solid var(--hair);margin:14px 0;height:0;}
 
 /* ---- buttons: rectangular, 56 px, one primary per screen ---------------- */
@@ -126,7 +127,7 @@ bdi{unicode-bidi:isolate;}
    1.63 marks each cell button[data-variant="segmented_control"] and the chosen one
    [data-selected="true"] (there is no kind= attribute on these buttons). */
 [data-testid="stButtonGroup"]{width:100%;}
-[data-testid="stButtonGroup"] [role="radiogroup"],[data-testid="stButtonGroup"] [role="group"]{flex-wrap:nowrap!important;gap:0!important;width:100%;}
+[data-testid="stButtonGroup"]:has(button[data-variant="segmented_control"]) [role="radiogroup"],[data-testid="stButtonGroup"]:has(button[data-variant="segmented_control"]) [role="group"]{flex-wrap:nowrap!important;gap:0!important;width:100%;}
 [data-testid="stButtonGroup"] button[data-variant="segmented_control"]{
  flex:1 1 0!important;min-width:0;min-height:48px;padding:0 12px!important;font:600 16px/1.3 var(--sans);border:2px solid var(--ink)!important;
  border-radius:0!important;margin:0!important;margin-inline-end:-2px!important;box-shadow:none!important;background:var(--paper)!important;color:var(--ink)!important;}
@@ -137,8 +138,13 @@ bdi{unicode-bidi:isolate;}
 [data-testid="stButtonGroup"] button[data-variant="segmented_control"]:not([data-selected="true"]):hover{background:var(--paper)!important;color:var(--ink)!important;}
 [data-testid="stButtonGroup"] button[data-variant="segmented_control"]:not([data-selected="true"]):active{background:var(--deep)!important;}
 [data-testid="stButtonGroup"] button p{font-weight:600;white-space:nowrap;}
-[data-testid="stButtonGroup"] button[data-variant="pills"]{border-radius:4px!important;border:2px solid var(--ink)!important;}
-[data-testid="stButtonGroup"] button[data-variant="pills"][data-selected="true"]{background:var(--ink)!important;color:var(--paper)!important;}
+/* field chips (st.pills, multi-select): rectangular, one per field, pressed = chosen */
+[data-testid="stButtonGroup"]:has(button[data-variant="pills"]) [role="group"],[data-testid="stButtonGroup"]:has(button[data-variant="pills"]) [role="radiogroup"]{flex-wrap:wrap;gap:8px!important;width:100%;}
+[data-testid="stButtonGroup"] button[data-variant="pills"]{min-height:44px;padding:0 12px!important;font:600 15px/1.2 var(--sans);border-radius:4px!important;border:1px solid var(--rule)!important;
+ background:var(--paper)!important;color:var(--ink)!important;margin:0!important;box-shadow:none!important;font-variant-numeric:tabular-nums;}
+[data-testid="stButtonGroup"] button[data-variant="pills"][data-selected="true"],[data-testid="stButtonGroup"] button[data-variant="pills"][data-selected="true"]:hover{background:var(--ink)!important;color:var(--paper)!important;border-color:var(--ink)!important;}
+[data-testid="stButtonGroup"] button[data-variant="pills"]:not([data-selected="true"]):hover{background:var(--deep)!important;color:var(--ink)!important;}
+[data-testid="stButtonGroup"] button[data-variant="pills"] p{font-weight:600;white-space:nowrap;}
 @media (max-width:400px){[data-testid="stButtonGroup"] button[data-variant="segmented_control"]{padding:0 8px!important;font-size:15px;}}
 
 /* ---- expander ----------------------------------------------------------- */
@@ -152,6 +158,8 @@ bdi{unicode-bidi:isolate;}
 [data-testid="stExpanderDetails"]{padding:4px 12px 12px!important;background:var(--deep);}
 [data-testid="stExpanderDetails"] p,[data-testid="stExpanderDetails"] li{font-size:15.5px;line-height:1.45;}
 
+/* ---- the invisible viewport reporter (viewport/index.html): out of the flow --- */
+[data-testid="stElementContainer"]:has(iframe[title$="hassad_viewport"]){position:absolute;height:0!important;min-height:0!important;width:0;overflow:hidden;margin:0!important;}
 /* ---- map frame ---------------------------------------------------------- */
 .st-key-map_frame [data-testid="stCustomComponentV1"],.st-key-map_frame iframe{border:1px solid var(--rule)!important;border-radius:3px!important;display:block;}
 
@@ -212,12 +220,24 @@ bdi{unicode-bidi:isolate;}
 [data-testid="stToast"] svg{display:none;}
 [data-testid="stToastText"] p,[data-testid="stToast"] [data-testid="stMarkdownContainer"] p{font:500 16px/22px var(--sans);color:var(--ink);margin:0;}
 
+/* ---- footer: one muted line and the privacy link, on every screen --------- */
+.st-key-footer{margin-top:32px;padding-top:12px;border-top:1px solid var(--hair);}
+.st-key-footer [data-testid="stMarkdownContainer"] p.foot{font:400 13.5px/1.4 var(--sans);color:var(--muted);margin:0;}
+.st-key-footer .stButton{display:flex;justify-content:flex-end;}
+.st-key-footer .stButton button{min-height:36px!important;font-size:14px!important;}
+@media (max-width:640px){
+ .st-key-footer>[data-testid="stLayoutWrapper"]>[data-testid="stHorizontalBlock"]{flex-wrap:nowrap!important;align-items:center;}
+ .st-key-footer [data-testid="stColumn"]{min-width:0!important;}
+ .st-key-footer [data-testid="stColumn"]:first-child{flex:1 1 0!important;}
+ .st-key-footer [data-testid="stColumn"]:last-child{flex:0 0 auto!important;width:auto!important;}
+}
 /* ---- About page --------------------------------------------------------- */
 .st-key-about [data-testid="stMarkdownContainer"] h2,.st-key-about_en [data-testid="stMarkdownContainer"] h2{font-family:var(--serif);font-variation-settings:"opsz" 48;font-weight:600;font-size:24px;line-height:1.2;color:var(--ink);padding:0!important;margin:24px 0 8px!important;}
 .st-key-about [data-testid="stMarkdownContainer"] h3,.st-key-about_en [data-testid="stMarkdownContainer"] h3{font-family:var(--sans);font-weight:600;font-size:19px;line-height:1.3;color:var(--ink);padding:0!important;margin:18px 0 4px!important;}
 .st-key-about [data-testid="stMarkdownContainer"] p,.st-key-about [data-testid="stMarkdownContainer"] li{font-size:17px;line-height:1.5;}
 .st-key-about_en [data-testid="stMarkdownContainer"] p,.st-key-about_en [data-testid="stMarkdownContainer"] li{font-size:16.5px;line-height:1.5;}
 .st-key-about_en [data-testid="stMarkdownContainer"] em{font-style:normal;font-size:15px;color:var(--muted);}
+.st-key-about [data-testid="stMarkdownContainer"] em{font-style:normal;font-size:15px;color:var(--muted);}  /* italic Arabic is not a thing */
 .st-key-about_en [data-testid="stMarkdownContainer"] table,.st-key-about_en [data-testid="stTableStyledTable"]{width:100%;border-collapse:collapse;border:0!important;margin:10px 0 20px;}
 .st-key-about_en [data-testid="stMarkdownContainer"] th,.st-key-about_en [data-testid="stTableStyledTable"] th{font:600 14px/20px var(--sans);color:var(--muted);text-align:start;padding:8px 12px 8px 0;border:0!important;border-bottom:1px solid var(--rule)!important;background:transparent!important;}
 .st-key-about_en [data-testid="stMarkdownContainer"] td,.st-key-about_en [data-testid="stTableStyledTable"] td{font:400 15.5px/1.4 var(--sans);font-variant-numeric:tabular-nums;color:var(--ink);padding:8px 12px 8px 0;border:0!important;border-bottom:1px solid var(--hair)!important;background:transparent!important;vertical-align:top;}
@@ -226,11 +246,39 @@ bdi{unicode-bidi:isolate;}
 .st-key-about_en [data-testid="stImageContainer"] img{border:1px solid var(--hair);border-radius:0;}
 .st-key-about_en [data-testid="stImageCaption"]{text-align:start!important;font:400 14px/20px var(--sans);color:var(--muted)!important;padding:6px 0 0;margin-bottom:20px;}
 
-/* ---- laptop ------------------------------------------------------------- */
-@media (min-width:1100px){
- .block-container,[data-testid="stMainBlockContainer"]{max-width:560px!important;padding:16px 24px 96px!important;}
- [data-testid="stMain"]{position:relative;}
- [data-testid="stMain"]::before{content:"";position:absolute;left:0;right:0;top:76px;border-top:1.5px solid var(--rule);pointer-events:none;}
+/* ---- tablet: one wider column ------------------------------------------- */
+@media (min-width:640px) and (max-width:959px){
+ .block-container,[data-testid="stMainBlockContainer"]{max-width:680px!important;padding:16px 24px 96px!important;}
+}
+
+/* ---- laptop and tablet-landscape: two panes ------------------------------
+   The phone DOM order is untouched; the main vertical block becomes a grid whose
+   first column holds the map (sticky, viewport-tall) and whose second column holds
+   everything else in reading order. The header and tagline span both columns.
+   In Arabic the grid mirrors itself: map on the right, panel on the left.
+   The About page (no map) is one wider column. Browsers without :has() keep the
+   single column. */
+@media (min-width:960px){
+ .block-container,[data-testid="stMainBlockContainer"]{max-width:1200px!important;padding:16px 32px 96px!important;}
+ .block-container:has(.st-key-about_en),[data-testid="stMainBlockContainer"]:has(.st-key-about_en){max-width:820px!important;}
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame){
+  display:grid!important;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:0 40px!important;align-items:start;}
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>*{grid-column:2;min-width:0;margin-bottom:10px;}
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>[data-testid="stElementContainer"]:has(style){display:none;}
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>[data-testid="stLayoutWrapper"]:has(>.st-key-row_hdr){grid-column:1/-1;grid-row:1;}
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>[data-testid="stElementContainer"]:has(p.tagline),
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>[data-testid="stElementContainer"]:has(hr.hdr-rule){grid-column:1/-1;grid-row:2;margin-bottom:14px;}
+ /* the wrapper fills the map's grid area; the map block sticks inside it, so it can
+    never slide past the area into the Numbers or footer rows while scrolling */
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>[data-testid="stLayoutWrapper"]:has(>.st-key-map_frame){
+  grid-column:1;grid-row:3/span 80;align-self:stretch;margin-bottom:0;overflow:visible;}
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>[data-testid="stLayoutWrapper"]>.st-key-map_frame{position:sticky;top:16px;flex:0 0 auto!important;height:auto!important;}
+ /* judges' Numbers: the whole width, below both panes (the map's area ends above it) */
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>[data-testid="stLayoutWrapper"]:has(>.st-key-numbers){grid-column:1/-1;grid-row:90;margin-top:16px;}
+ [data-testid="stMainBlockContainer"]>[data-testid="stVerticalBlock"]:has(.st-key-map_frame)>[data-testid="stLayoutWrapper"]:has(>.st-key-footer){grid-column:1/-1;grid-row:95;}
+ .block-container:has(.st-key-about_en) .st-key-footer,.block-container:has(.st-key-about) .st-key-footer{max-width:none;}
+ .st-key-numbers .econ,.st-key-numbers .stats,.st-key-numbers [data-testid="stMarkdownContainer"] .hint,.st-key-numbers [data-testid="stSlider"]{max-width:720px;}
+ .st-key-numbers [data-testid="stButtonGroup"]{max-width:720px;}
  [data-testid="stMarkdownContainer"] h1.hassad{font-size:44px;}
  [data-testid="stMarkdownContainer"] h1.hassad.compact{font-size:30px;}
  .hero .big{font-size:52px;}
@@ -271,13 +319,14 @@ RTL_CSS = """
 [data-testid="stButtonGroup"] button p{font-size:15.5px;}
 [class*="st-key-small"] .stButton button{font-size:15px;}
 .st-key-about_en,.st-key-judge_en{direction:ltr;text-align:left;}
+.st-key-about [data-testid="stMarkdownContainer"] h2{font-family:var(--serif-ar)!important;font-weight:700;font-size:26px;line-height:1.3;}
 .st-key-about_en *,.st-key-judge_en *{text-align:left;}
 .st-key-about_en [data-testid="stMarkdownContainer"] ol,.st-key-about_en [data-testid="stMarkdownContainer"] ul{padding-inline-start:1.5rem;}
 .st-key-about_en [data-testid="stMarkdownContainer"] td:not(:first-child){text-align:end;}
 /* the judge island is LTR for the chart, grid and CSV; its Arabic caption and button label read right-to-left */
 .st-key-judge_en [data-testid="stCaptionContainer"],.st-key-judge_en [data-testid="stCaptionContainer"] *,
 .st-key-judge_en .stDownloadButton,.st-key-judge_en .stDownloadButton *{direction:rtl;text-align:right;}
-@media (min-width:1100px){[data-testid="stMarkdownContainer"] h1.hassad{font-size:48px;}[data-testid="stMarkdownContainer"] h1.hassad.compact{font-size:34px;}.hero .big{font-size:54px;}}
+@media (min-width:960px){[data-testid="stMarkdownContainer"] h1.hassad{font-size:48px;}[data-testid="stMarkdownContainer"] h1.hassad.compact{font-size:34px;}.hero .big{font-size:54px;}}
 """
 
 # The printable calendar (a standalone HTML file the farmer downloads): the
