@@ -60,6 +60,7 @@ bdi{unicode-bidi:isolate;}
 /* ---- wordmark, tagline, overlines, headings ----------------------------- */
 [data-testid="stMarkdownContainer"] h1.hassad{font-family:var(--serif);font-variation-settings:"opsz" 96;font-weight:600;
  font-size:38px;line-height:1.05;letter-spacing:-.005em;margin:0!important;padding:4px 0 0!important;white-space:nowrap;color:var(--ink);}
+[data-testid="stMarkdownContainer"] h1.hassad a.home,[data-testid="stMarkdownContainer"] h1.hassad a.home:hover{color:inherit!important;text-decoration:none!important;}
 [data-testid="stMarkdownContainer"] h1.hassad .wm2{font-family:var(--serif-ar);font-weight:700;font-size:.8em;color:var(--muted);margin-inline-start:6px;letter-spacing:0;}
 [data-testid="stMarkdownContainer"] h1.hassad.compact{font-size:26px;padding-top:8px!important;}
 [data-testid="stMarkdownContainer"] p.tagline{font-size:16px;line-height:1.4;color:var(--muted);margin:0 0 4px;}
@@ -238,13 +239,13 @@ bdi{unicode-bidi:isolate;}
 .st-key-about_en [data-testid="stMarkdownContainer"] p,.st-key-about_en [data-testid="stMarkdownContainer"] li{font-size:16.5px;line-height:1.5;}
 .st-key-about_en [data-testid="stMarkdownContainer"] em{font-style:normal;font-size:15px;color:var(--muted);}
 .st-key-about [data-testid="stMarkdownContainer"] em{font-style:normal;font-size:15px;color:var(--muted);}  /* italic Arabic is not a thing */
-.st-key-about_en [data-testid="stMarkdownContainer"] table,.st-key-about_en [data-testid="stTableStyledTable"]{width:100%;border-collapse:collapse;border:0!important;margin:10px 0 20px;}
-.st-key-about_en [data-testid="stMarkdownContainer"] th,.st-key-about_en [data-testid="stTableStyledTable"] th{font:600 14px/20px var(--sans);color:var(--muted);text-align:start;padding:8px 12px 8px 0;border:0!important;border-bottom:1px solid var(--rule)!important;background:transparent!important;}
-.st-key-about_en [data-testid="stMarkdownContainer"] td,.st-key-about_en [data-testid="stTableStyledTable"] td{font:400 15.5px/1.4 var(--sans);font-variant-numeric:tabular-nums;color:var(--ink);padding:8px 12px 8px 0;border:0!important;border-bottom:1px solid var(--hair)!important;background:transparent!important;vertical-align:top;}
+.st-key-about [data-testid="stMarkdownContainer"] table,.st-key-about [data-testid="stTableStyledTable"],.st-key-about_en [data-testid="stMarkdownContainer"] table,.st-key-about_en [data-testid="stTableStyledTable"]{width:100%;border-collapse:collapse;border:0!important;margin:10px 0 20px;}
+.st-key-about [data-testid="stMarkdownContainer"] th,.st-key-about [data-testid="stTableStyledTable"] th,.st-key-about_en [data-testid="stMarkdownContainer"] th,.st-key-about_en [data-testid="stTableStyledTable"] th{font:600 14px/20px var(--sans);color:var(--muted);text-align:start;padding:8px 12px 8px 0;border:0!important;border-bottom:1px solid var(--rule)!important;background:transparent!important;}
+.st-key-about [data-testid="stMarkdownContainer"] td,.st-key-about [data-testid="stTableStyledTable"] td,.st-key-about_en [data-testid="stMarkdownContainer"] td,.st-key-about_en [data-testid="stTableStyledTable"] td{font:400 15.5px/1.4 var(--sans);font-variant-numeric:tabular-nums;color:var(--ink);padding:8px 12px 8px 0;border:0!important;border-bottom:1px solid var(--hair)!important;background:transparent!important;vertical-align:top;}
 .st-key-about_en [data-testid="stMarkdownContainer"] td:not(:first-child){text-align:end;}
-.st-key-about_en [data-testid="stTable"]{border:0!important;}
-.st-key-about_en [data-testid="stImageContainer"] img{border:1px solid var(--hair);border-radius:0;}
-.st-key-about_en [data-testid="stImageCaption"]{text-align:start!important;font:400 14px/20px var(--sans);color:var(--muted)!important;padding:6px 0 0;margin-bottom:20px;}
+.st-key-about [data-testid="stTable"],.st-key-about_en [data-testid="stTable"]{border:0!important;}
+.st-key-about [data-testid="stImageContainer"] img,.st-key-about_en [data-testid="stImageContainer"] img{border:1px solid var(--hair);border-radius:0;}
+.st-key-about [data-testid="stImageCaption"],.st-key-about_en [data-testid="stImageCaption"]{text-align:start!important;font:400 14px/20px var(--sans);color:var(--muted)!important;padding:6px 0 0;margin-bottom:20px;}
 
 /* ---- tablet: one wider column ------------------------------------------- */
 @media (min-width:640px) and (max-width:959px){

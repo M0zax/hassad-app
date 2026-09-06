@@ -235,11 +235,12 @@ on_fields = ss.page == "plan" and ss.screen == "fields"
 with st.container(key="row_hdr"):
     h1, h2 = st.columns([2, 1.3], gap="small", vertical_alignment="center")
     with h1:
+        home = f'?lang={ss.lang}'                 # the wordmark takes you back to the start
         if on_fields:
-            html(f'<h1 class="hassad">{T["title"]} <span class="wm2" lang="{OTHER}">'
-                 f'{STRINGS[OTHER]["title"]}</span></h1>')
+            html(f'<h1 class="hassad"><a class="home" href="{home}" target="_self">{T["title"]} '
+                 f'<span class="wm2" lang="{OTHER}">{STRINGS[OTHER]["title"]}</span></a></h1>')
         else:
-            html(f'<h1 class="hassad compact">{T["title"]}</h1>')
+            html(f'<h1 class="hassad compact"><a class="home" href="{home}" target="_self">{T["title"]}</a></h1>')
     with h2:
         with st.container(key="row_hdrbtn"):
             b1, b2 = st.columns(2, gap="small")
@@ -304,12 +305,14 @@ if ss.page == "about":
         if b.button(STRINGS[OTHER]["lang_name"], key="try_lang", width="stretch"):
             toggle_lang()
             st.rerun()
-    import about
-    if RTL:
+    if RTL:                                     # the full page in Arabic
+        import about_ar
         with st.container(key="about"):
-            about.render_ar_summary()
-    with st.container(key="about_en"):          # stays left-to-right on the Arabic page
-        about.render_en()
+            about_ar.render()
+    else:
+        import about
+        with st.container(key="about_en"):
+            about.render_en()
     if st.button(T["back_plan"], key="back_bottom", type="tertiary"):
         go_plan()
         st.rerun()
@@ -348,7 +351,13 @@ def build_map(drawing=False):
         lats = [lat for f in sel for lon, lat in f.poly_ll.exterior.coords]
         lons = [lon for f in sel for lon, lat in f.poly_ll.exterior.coords]
         span_km = max((max(lats) - min(lats)) * 111, (max(lons) - min(lons)) * 92)
-        if span_km <= 3.0:
+        if today is not None and not drawing and any(f.name == today for f in fields):
+            # the plan: frame the field to cut now, with room to see its neighbours
+            tf = next(f for f in fields if f.name == today)
+            x0, y0, x1, y1 = tf.poly_ll.bounds
+            grow = 0.9 * max(x1 - x0, y1 - y0)
+            m.fit_bounds([[y0 - grow, x0 - grow], [y1 + grow, x1 + grow]], padding=(10, 10))
+        elif span_km <= 3.0:
             m.fit_bounds([[min(lats), min(lons)], [max(lats), max(lons)]], padding=(20, 20))
         else:
             cys = sorted(f.poly_ll.centroid.y for f in sel)
@@ -451,38 +460,86 @@ def _arrowhead(fg, at, frm, size=14, color=None):
                                           icon_anchor=(size // 2, size // 2))).add_to(fg)
 
 
+def _passes(poly_ll, start_ll):
+    """The harvester's back-and-forth passes inside one field, as (lat, lon) points:
+    parallel to the field's long axis, spaced along its short axis, starting on the
+    side the harvester comes from. Geometry in locally scaled degrees."""
+    from shapely.geometry import LineString, Polygon
+    k = math.cos(math.radians(poly_ll.centroid.y))
+    P = Polygon([(lon * k, lat) for lon, lat in poly_ll.exterior.coords])
+    inner = P.buffer(-0.00005)                    # ~5 m inside the edge
+    if inner.is_empty or inner.geom_type != "Polygon":
+        inner = P
+    c = list(P.minimum_rotated_rectangle.exterior.coords)[:4]
+    if len(c) < 4:
+        return None
+    e1 = (c[1][0] - c[0][0], c[1][1] - c[0][1])
+    e2 = (c[3][0] - c[0][0], c[3][1] - c[0][1])
+    if math.hypot(*e1) >= math.hypot(*e2):
+        u, v = e1, e2
+    else:
+        u, v = e2, e1
+    short_m = math.hypot(*v) * 111_000            # the short side in metres
+    n = max(3, min(7, round(short_m / 28)))       # one pass per ~28 m, 3 to 7 passes
+    passes = []
+    for i in range(n):
+        t = (i + 0.5) / n
+        a = (c[0][0] + v[0] * t, c[0][1] + v[1] * t)
+        seg = LineString([a, (a[0] + u[0], a[1] + u[1])]).intersection(inner)
+        if seg.geom_type == "MultiLineString":
+            seg = max(seg.geoms, key=lambda g: g.length)
+        if seg.geom_type != "LineString" or seg.length == 0:
+            continue
+        pts = list(seg.coords)
+        passes.append((pts[0], pts[-1]))
+    if not passes:
+        return None
+    flip = False
+    if start_ll is not None:
+        s = (start_ll[1] * k, start_ll[0])
+        mid = lambda ab: ((ab[0][0] + ab[1][0]) / 2, (ab[0][1] + ab[1][1]) / 2)
+        d = lambda p, q: math.hypot(p[0] - q[0], p[1] - q[1])
+        if d(mid(passes[-1]), s) < d(mid(passes[0]), s):   # begin on the near side
+            passes.reverse()
+        a, b = passes[0]
+        flip = d(a, s) > d(b, s)
+    coords = []
+    for i, (a, b) in enumerate(passes):
+        fwd = (i % 2 == 0) != flip
+        coords += [a, b] if fwd else [b, a]
+    return [(y, x / k) for x, y in coords]
+
+
 def draw_route(fg, order, by_name):
-    """Solid arrow along the long axis of every standing field in harvest order,
-    dashed hops between them, starting from where the harvester stands."""
+    """Only the field to cut now gets the harvester's passes drawn inside it
+    (entering on the side the machine comes from); then one dashed hop to the
+    next field in the order. The other fields stay clean."""
+    if not order or order[0] not in by_name:
+        return
     start = None
     if ss.harvested:
         pos = ss.machine_at if (ss.balanced and ss.machine_at in ss.harvested) else ss.harvested[-1]
         if pos in by_name:
             c = by_name[pos].poly_ll.centroid
             start = (c.y, c.x)
-    prev_exit = start
-    for k, name in enumerate(order):
-        if name not in by_name:
-            continue
-        e1, e2 = _axis_ends(by_name[name].poly_ll)
-        if prev_exit is None:
-            nxt = by_name.get(order[k + 1]) if k + 1 < len(order) else None
-            if nxt is not None:                   # leave the field on the side of the next one
-                c = nxt.poly_ll.centroid
-                entry, exit_ = (e2, e1) if _dist(e1, (c.y, c.x)) < _dist(e2, (c.y, c.x)) else (e1, e2)
-            else:
-                entry, exit_ = e1, e2
-        else:                                     # enter on the side the harvester comes from
-            entry, exit_ = (e1, e2) if _dist(e1, prev_exit) <= _dist(e2, prev_exit) else (e2, e1)
-            first = k == 0
-            _line([prev_exit, entry], color=skin.INK, weight=2.5 if first else 1.5,
-                  opacity=0.9 if first else 0.55, dash_array="4 7").add_to(fg)
-            if first:
-                _arrowhead(fg, entry, prev_exit, size=12)
-        first = k == 0
-        _line([entry, exit_], color=skin.INK, weight=3.5 if first else 2.5, opacity=0.95).add_to(fg)
-        _arrowhead(fg, exit_, entry, size=16 if first else 13)
-        prev_exit = exit_
+    today_field = by_name[order[0]]
+    nxt = by_name.get(order[1]) if len(order) > 1 else None
+    if start is None and nxt is not None:         # no machine position: leave towards the next field
+        c = nxt.poly_ll.centroid
+        e1, e2 = _axis_ends(today_field.poly_ll)
+        start = e2 if _dist(e1, (c.y, c.x)) < _dist(e2, (c.y, c.x)) else e1
+    path = _passes(today_field.poly_ll, start)
+    if not path:
+        return
+    _line(path, color=skin.INK, weight=3, opacity=0.95).add_to(fg)
+    for i in range(1, len(path), 2):              # an arrowhead at the end of every pass
+        _arrowhead(fg, path[i], path[i - 1], size=11 if i < len(path) - 1 else 16)
+    if nxt is not None:
+        e1, e2 = _axis_ends(nxt.poly_ll)
+        exit_ = path[-1]
+        entry = e1 if _dist(e1, exit_) <= _dist(e2, exit_) else e2
+        _line([exit_, entry], color=skin.INK, weight=2, opacity=0.8, dash_array="4 7").add_to(fg)
+        _arrowhead(fg, entry, exit_, size=12)
 
 
 def tapped_field(out):
@@ -751,17 +808,17 @@ else:
     disp_cut = [label(h) for h in ss.harvested]
     share_rows = [dict(r, Day=str(r["Day"])) for r in disp_rows]
     wa = logic.whatsapp_text(share_rows, harvested=disp_cut, lang=ss.lang)
-    cal = logic.calendar_html(share_rows, lang=ss.lang)
     if RTL:
         wa = wa.replace(", ", "، ")
-    cal = cal.replace("</style>", skin.FONTS_IMPORT + skin.CALENDAR_CSS + "</style>", 1)
+    import calendar_pdf
+    pdf_bytes = calendar_pdf.build(share_rows, lang=ss.lang)   # the plan as a one-page PDF
     if ss.mode == "custom":
         html(f'<p class="hint">{T["custom_refresh_note"]}</p>')
     with st.container(key="row_share"):
         s1, s2 = st.columns(2, gap="small")
         s1.link_button(T["send_wa"], "https://wa.me/?text=" + urllib.parse.quote(wa),
                        width="stretch")
-        s2.download_button(T["print"], cal, file_name="hassad_plan.html", mime="text/html",
+        s2.download_button(T["print"], pdf_bytes, file_name="hassad_plan.pdf", mime="application/pdf",
                            width="stretch", on_click="ignore")
     if st.button(T["my_fields"], type="tertiary", key="my_fields_btn"):
         ss.screen, ss.focus, ss.last_click = "fields", None, None
