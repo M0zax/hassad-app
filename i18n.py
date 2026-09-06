@@ -309,7 +309,7 @@ CONTENT = {
 <li>Tap the polygon tool — the shape icon at the top-left corner of the map.</li>
 <li>Tap each corner of the field, going around its edge. Tap the first corner again to close the shape. For a rectangular field the square tool is quicker.</li>
 <li>Made a mistake? The edit tool moves corners; the bin deletes a shape.</li>
-<li>One shape per field. A field split by a road or a canal is two fields.</li>
+<li>One shape per field. Two shapes that overlap, or one drawn inside another, are joined into one field. A field split by a road or a canal is two fields.</li>
 <li>Press "Make my plan".</li>
 </ol>
 <p>Good to know:</p>
@@ -323,7 +323,7 @@ CONTENT = {
 <li>اضغط أداة الرسم — رمز المضلّع في أعلى الخريطة على اليمين.</li>
 <li>اضغط على زوايا الحقل واحدة تلو الأخرى وأنت تدور حول حدوده، ثم اضغط على الزاوية الأولى مرة ثانية لإغلاق الشكل. للحقل المستطيل تكفي أداة المربّع.</li>
 <li>أخطأت؟ أداة التعديل تحرّك الزوايا، وأداة الحذف تمسح الشكل كلّه.</li>
-<li>شكل واحد لكل حقل. الحقل الذي يقطعه طريق أو قناة هو حقلان.</li>
+<li>شكل واحد لكل حقل. الشكلان المتداخلان، أو شكل مرسوم داخل آخر، يُدمجان في حقل واحد. الحقل الذي يقطعه طريق أو قناة هو حقلان.</li>
 <li>اضغط «جهّز خطتي».</li>
 </ol>
 <p>مهم أن تعرف:</p>

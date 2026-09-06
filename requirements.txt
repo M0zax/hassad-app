@@ -12,3 +12,4 @@ streamlit-folium==0.27.4
 
 # 6 Sep 2026: touched so Streamlit Community Cloud reboots the app (it does not reload imported
 # modules on a plain file change; a dependency-file change forces a fresh process).
+# build 96fc604  (stamped by publish_public.py so the cloud app restarts)

@@ -152,7 +152,8 @@ surviving a refresh all work.
 &#36;0: no sensors, no subscription, a different order for work they already do.
 The benefit is measured, not promised: 5.5% less fire exposure guaranteed
 under any assumption, up to 33% in cured-gap years, and about 15 ha (~&#36;13,000)
-less crop exposed per fire event on our 141 ha study area.
+less crop exposed per fire event on our 141 ha study area. The section
+*Cost and benefit, in numbers* below sets it out line by line.
 
 **Why not focus on Arabic?** We did, on his advice: the whole app runs in
 Arabic with one tap — every screen, the generated reasons, the WhatsApp
@@ -175,6 +176,47 @@ fuel. In a mixed farm, simply don't select the green fields.
 What we can state exactly is how much less crop a fire would find on a random
 day (the table above). Money saved per season needs an ignition probability;
 we show that as an explicit slider rather than bury it in a headline.
+
+## Cost and benefit, in numbers
+
+Every figure below is computed by the app from the 11 study fields (141 ha,
+24-day season, dry-year gap rule unless stated) and appears in the Numbers
+section under every plan. Yield and price are assumptions until Team A
+sources Bekaa figures.
+
+| | value |
+| --- | --- |
+| Farmer's cost | &#36;0 — no device, no subscription, no extra work; the same harvest in a different order |
+| Cost to run the service | hosting on Streamlit Community Cloud (free tier); Sentinel-2 and NASA FIRMS data (free); tracing a village's fields once (hours, not money); no hardware |
+| Crop value at stake | ≈ &#36;123,500 per season (3.5 t/ha × &#36;250/t = &#36;875/ha, assumed) |
+| Largest block a fire finds on a random day, usual order | 46 ha |
+| … with Hassad's order | 30 ha |
+| Less crop exposed per fire event | 15.1 ha ≈ &#36;13,200, about &#36;94 of crop per hectare in the plan |
+| Season fire exposure, dry year (ha·days) | 1093 usual → 854 greedy → 730 Hassad (−33%) |
+| Season fire exposure, wet year | 589 → 553 (−6%) |
+| Guaranteed under either rule (robust order) | −5.5% |
+| Expected saving per season = chance of a fire × &#36;13,200 | 5%: ≈ &#36;660 · 10%: ≈ &#36;1,300 · 25%: ≈ &#36;3,300 · 50%: ≈ &#36;6,600 |
+| Driving over the season | 19.5 km usual → 23.2 km fire-only order (+3.7 km); the fire + driving setting: 21.9 km at −33.0% |
+| Time | a plan in under a second; re-planning after a cut, one tap |
+
+**Why the benefit is larger than it looks.** The cost side is zero and stays
+zero as the number of farms grows, so every hectare planned adds about &#36;94
+of crop protected per fire event; a cooperative of 1,000 ha is the same
+software and the same free data. Three things would make the figure firmer or
+bigger, in this order:
+
+1. **Measure the ignition chance.** The expected-saving line is the only one
+   that depends on an assumption. NASA's FIRMS record for the Bekaa (13 years,
+   550 detections within 10 km of the fields) is enough to estimate how often a
+   fire reaches a given block of fields in June, which turns the slider into a
+   number.
+2. **Use the fire + driving setting by default** once the balanced order is
+   validated with the cooperative: it recovers most of the extra driving
+   (23.2 → 21.9 km) at almost no fire cost (−33.2% → −33.0%).
+3. **Read the gap rule from orbit each June.** In a cured-gap year the gain is
+   33%, in a green-gap year 6%; the satellite check tells which year it is
+   before the harvest starts, so the larger figure is claimed only when it is
+   real.
 
 ## Questions judges ask
 

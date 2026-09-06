@@ -507,6 +507,36 @@ def step(title, over=None):
     html(f'<div class="step">{o}<h2>{title}</h2></div>')
 
 
+def merge_overlapping(drawings):
+    """Shapes that overlap, touch, or sit inside one another are one field.
+    Keeps the drawing order: a merged field takes the place of its first shape."""
+    from shapely.geometry import shape, mapping
+    from shapely.ops import unary_union
+    polys = []
+    for feat in drawings or []:
+        geom = (feat or {}).get("geometry") or {}
+        if geom.get("type") != "Polygon" or not geom.get("coordinates"):
+            continue
+        try:
+            p = shape(geom)
+            if not p.is_valid:
+                p = p.buffer(0)
+            if not p.is_empty:
+                polys.append(p)
+        except Exception:
+            continue
+    if len(polys) < 2:
+        return drawings
+    merged = unary_union(polys)
+    parts = list(merged.geoms) if merged.geom_type == "MultiPolygon" else [merged]
+    placed = []
+    for part in parts:
+        first = next((i for i, p in enumerate(polys) if p.intersects(part)), len(polys))
+        placed.append((first, part))
+    placed.sort(key=lambda t: t[0])
+    return [{"type": "Feature", "properties": {}, "geometry": mapping(part)} for _, part in placed]
+
+
 def count_line(n):
     """'1 field' / '11 fields' / 'عدد الحقول: 11'."""
     return fields_word(n, "en") if ss.lang == "en" else T["n_fields"].format(n=n)
@@ -598,7 +628,8 @@ if ss.screen == "fields":
         drawings = (out or {}).get("all_drawings")
         # the tool reports only after a drawing event: until then the fields drawn
         # earlier (seeded into the tool) are the current set
-        drawn = logic.custom_fields_from_geojson(drawings) if drawings is not None else list(ss.custom_fields)
+        drawn = (logic.custom_fields_from_geojson(merge_overlapping(drawings))
+                 if drawings is not None else list(ss.custom_fields))
         ss.drawn_any = bool(drawn)
         if drawn:
             ha_drawn = sum(f.area_ha for f in drawn)
@@ -737,11 +768,11 @@ else:
         leave_plan_url()
         st.rerun()
 
-    # ---- NUMBERS: for judges only (/?judge=1); the farmer never sees engineering
-    if judge:
+    # ---- NUMBERS: under every plan, folded for farmers, open for judges (/?judge=1)
+    if True:
         with st.container(key="numbers"):          # keyed so the laptop layout can give it the full width
             html('<hr class="rule">')
-            with st.expander(T["numbers"], expanded=True):
+            with st.expander(T["numbers"], expanded=judge):
                 e = logic.economics(plan)
                 html(f'<div class="econ"><div class="t">{T["econ_title"]}</div>'
                      f'<div class="line">{T["econ_line"].format(ha=bdi(f"{e['total_ha']:.0f}"), usd="<b>" + bdi(money(e["value_usd"])) + "</b>")}</div>'
