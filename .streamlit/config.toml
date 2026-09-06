@@ -1,12 +1,49 @@
-# Hassad app theme -- light, high-contrast, readable in direct sunlight on a phone.
+# Hassad -- "Daftar" field-notebook theme for Streamlit 1.63.
+# Every [theme] key below exists in 1.63 (verified against streamlit/config.py).
+# The fonts themselves are loaded by the @import at the top of design/hassad.css.
+
 [theme]
 base = "light"
-primaryColor = "#2F7D46"          # green: the one action colour (buttons)
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#FFF6DC"
-textColor = "#111111"
-font = "sans serif"
-baseFontSize = 18
+
+# --- ink & paper -----------------------------------------------------------
+primaryColor = "#1F1A12"               # ink: primary button, slider, focus ring, active segment
+backgroundColor = "#F5EFE3"            # paper
+secondaryBackgroundColor = "#EBE2CF"   # paper-deep: expander head, table headers, toned panels
+textColor = "#1F1A12"                  # ink
+linkColor = "#7A5608"                  # wheat-ink (5.80:1 on paper)
+linkUnderline = true
+
+# --- borders & shape -------------------------------------------------------
+borderColor = "#8A8070"                # line: widget outlines meet 3:1
+showWidgetBorder = true
+baseRadius = "4px"                     # every rectangle with corners
+buttonRadius = "4px"
+dataframeBorderColor = "#8A8070"
+dataframeHeaderBackgroundColor = "#EBE2CF"
+
+# --- type ------------------------------------------------------------------
+font = "IBM Plex Sans, IBM Plex Sans Arabic, Segoe UI, Roboto, system-ui, sans-serif"
+headingFont = "Fraunces, Amiri, Georgia, Times New Roman, serif"
+codeFont = "Consolas, Menlo, monospace"
+baseFontSize = 18                      # 1rem = 18px
+baseFontWeight = 400
+headingFontSizes = ["1.556rem", "1.222rem", "1.111rem", "1rem", "1rem", "1rem"]
+headingFontWeights = [500, 600, 600, 600, 600, 600]
+metricValueFontSize = "2.222rem"
+metricValueFontWeight = 600
+codeBackgroundColor = "#EBE2CF"
+codeTextColor = "#1F1A12"
+
+# --- charts and "semantic" colours: nothing Streamlit draws may be blue, purple or green
+chartCategoricalColors = ["#1F1A12", "#9B3518", "#8A8070", "#4F4638"]
+chartSequentialColors = ["#F5EFE3", "#EFE4C4", "#E9DDB7", "#E2C77E", "#D9A02E", "#C87A26", "#B65A1E", "#9B3518", "#5C2A16", "#1F1A12"]
+redColor = "#9B3518"
+orangeColor = "#D9A02E"
+yellowColor = "#D9A02E"
+blueColor = "#4F4638"
+violetColor = "#4F4638"
+greenColor = "#4F4638"
+grayColor = "#8A8070"
 
 [client]
 toolbarMode = "minimal"

@@ -3,9 +3,12 @@ The "About Hassad" page: everything a judge, a mentor, a farmer or a
 journalist could ask, in one place -- including the questions our MIT mentor
 actually asked, with our answers.
 
-Rendered inside app.py when the URL has ?page=about or the About button is
-pressed. Text is English (the audience is the competition); a short Arabic
-summary sits at the top when the app is in Arabic.
+Rendered by app.py when the URL has ?page=about or the About link is pressed:
+render_ar_summary() inside st.container(key="about") when the app is in Arabic,
+then render_en() inside st.container(key="about_en"), which the skin keeps
+left-to-right on the Arabic page. Text is English (the audience is the
+competition). Dollar signs are written as &#36; because Streamlit's markdown
+treats $...$ as maths.
 """
 
 import os
@@ -20,33 +23,42 @@ FIG = {
     "fields": "satellite_fields.png",
     "firms": "firms_bekaa.png",
     "frame": "frame_day05.png",
-    "gif": "harvest_comparison.gif",
     "sens": "sensitivity_thresholds.png",
 }
 
 
-def _img(key, caption):
+def _img(key, n, caption):
     path = FIG[key]
     if os.path.exists(path):
-        st.image(path, caption=caption, use_container_width=True)
+        st.image(path, caption=f"Figure {n} — {caption}", width="stretch")
+
+
+def render_ar_summary():
+    """The Arabic summary above the English body (shown when the app is in Arabic)."""
+    st.markdown("""
+<div class="ar-summary" lang="ar" dir="rtl">
+<h3>ما هو «حصاد»؟</h3>
+<p>«حصاد» يقول لمزارعي القمح في البقاع بأي ترتيب يحصدون حقولهم المتجاورة، حتى لا تجد
+النار كتلة كبيرة متصلة من القمح الجاف تحرقها: الحقل المحصود يصير حاجزاً يوقف النار.
+البرنامج يجرّب كل الترتيبات الممكنة (أكثر من 39 مليون ترتيب لأحد عشر حقلاً) ويختار
+الأفضل في أجزاء من الثانية، ويقرأ حالة الحقول والفجوات بينها من صور الأقمار الصناعية
+المجانية كل موسم. لا يحتاج إلى أي أجهزة، وكلفته على المزارع صفر. بقية هذه الصفحة
+بالإنجليزية للجنة التحكيم.</p>
+</div>
+""", unsafe_allow_html=True)
+    st.divider()
 
 
 def render(lang="en"):
+    """Both parts in one call (the name older scripts import)."""
     if lang == "ar":
-        st.markdown("""
-### ما هو «حصاد»؟
-«حصاد» يخبر مزارعي القمح في سهل البقاع بأي ترتيب يحصدون حقولهم المتجاورة، بحيث لا تجد
-النار أبداً كتلة كبيرة متصلة من القمح الجاف لتحرقها. الحقل المحصود يصبح حاجزاً للنار.
-البرنامج يحسب الترتيب الأمثل رياضياً من بين كل الاحتمالات (أكثر من 39 مليون ترتيب
-لأحد عشر حقلاً) في أجزاء من الثانية، ويقرأ حالة الحقول والفجوات بينها من صور الأقمار
-الصناعية المجانية كل موسم. لا يحتاج أي أجهزة، وكلفته على المزارع صفر. الصفحة التالية
-بالإنجليزية تشرح كل التفاصيل والأسئلة الشائعة.
-""")
-        st.divider()
+        render_ar_summary()
+    render_en()
 
+
+def render_en():
+    """The English body. The page title is drawn by app.py above the Try-it buttons."""
     st.markdown("""
-# About Hassad حصاد
-
 **Hassad tells a wheat cooperative the order in which to harvest neighbouring
 fields so that a fire can never find a large connected block of standing dry
 wheat.** A harvested field is stubble — a firebreak. The order of the harvest
@@ -54,8 +66,8 @@ decides how big the largest block of fuel is on every day of the season, and
 that order can be chosen. Hassad chooses the provably best one, in
 milliseconds, at zero cost to the farmer.
 
-*FIRST Global Challenge 2026 "Igniting Innovation" · Team Lebanon · Prevent
-category · Phase 2 semifinalist.*
+<p><em>FIRST Global Challenge 2026 "Igniting Innovation" · Team Lebanon · Prevent
+category · Phase 2 semifinalist.</em></p>
 
 ## How it works, in four steps
 
@@ -91,17 +103,17 @@ which nobody has measured; the app's *Numbers* section has a slider for it.
 
 ## Evidence
 
-""".format(y=WHEAT_YIELD_T_PER_HA, p=f"{WHEAT_PRICE_USD_PER_T:.0f}"))
+""".format(y=WHEAT_YIELD_T_PER_HA, p=f"{WHEAT_PRICE_USD_PER_T:.0f}"), unsafe_allow_html=True)
 
-    _img("map", "The study area and the fire-adjacency graph (red = fields within 175 m).")
+    _img("map", 1, "The study area and the fire-adjacency graph (fields within 175 m are connected).")
     st.markdown("""
 **The gaps are seasonal.** We measured every contested gap between fields in
 Sentinel-2 imagery across three harvest seasons. In June 2025 the gap between
-field *nte* and field 4 was cured dry vegetation (NDVI 0.17 — a fuel bridge);
+field 3 and field 4 was cured dry vegetation (NDVI 0.17 — a fuel bridge);
 in 2024 and 2026 the same gaps stayed green (barriers). So Hassad does not
 assume a fuel map: it reads each year's real one from orbit.
 """)
-    _img("gaps", "NDVI of the seven contested gaps at harvest time, three summers.")
+    _img("gaps", 2, "NDVI of the seven contested gaps at harvest time, three summers.")
     st.markdown("""
 **The harvest is visible from space.** The same imagery caught the June 2026
 harvest as an NDVI collapse (0.6 → 0.25 in 17 days) on fields 4–7 and 10–12 —
@@ -109,7 +121,7 @@ while two of our "wheat" fields carried an irrigated summer crop that year and
 acted as firebreaks. Fields rotate; the app treats which fields are fuel as a
 yearly input.
 """)
-    _img("fields", "What each field was doing, June by June, from Sentinel-2.")
+    _img("fields", 3, "What each field was doing, June by June, from Sentinel-2.")
     st.markdown("""
 **Fires happen when wheat is standing.** NASA's FIRMS archive holds 1,821
 thermal-anomaly detections in the Bekaa since 2012, 550 of them within 10 km
@@ -117,7 +129,7 @@ of our fields; June–July carry 1.7× their calendar share. (Detections are
 thermal anomalies, a lower bound: they include deliberate stubble burns and
 miss fires under ~0.1 ha.)
 """)
-    _img("firms", "Thirteen years of NASA fire detections in the Bekaa: when and where.")
+    _img("firms", 4, "Thirteen years of NASA fire detections in the Bekaa: when and where.")
     st.markdown("""
 **The fire service agrees.** The Chief of Civil Defence in Jdita told the team
 (26 July 2026) that most fires ignite just before harvest, when machinery
@@ -125,7 +137,7 @@ blades strike hidden rocks in tinder-dry wheat, and that fire trucks cannot
 reach remote farmland in time — so firebreaks between fields are the
 defence that works.
 """)
-    _img("frame", "Day 5 of the season: largest-field-first (left), greedy (middle), exact optimum (right).")
+    _img("frame", 5, "Day 5 of the season: largest-field-first (left), greedy (middle), exact optimum (right).")
 
     st.markdown("""
 ## Questions our MIT mentor asked — and our answers
@@ -153,7 +165,7 @@ fields Hassad has never seen.
 
 **Does it work for other crops?** Any crop that is fuel while standing dry
 and whose harvest removes that fuel:
-""")
+""", unsafe_allow_html=True)
     st.table({"crop": list(CROP_NOTES), "in the model": list(CROP_NOTES.values())})
     st.markdown("""
 Our own imagery proved the barrier case: irrigated fields are firebreaks, not
@@ -200,11 +212,5 @@ Bekaa cooperatives (in progress), a pilot harvest with one cooperative in
 May–July 2027 with GPS logging on the combine and before/after satellite
 verification, then scaling across the Bekaa and Akkar plains. Free for
 farmers; institutional partners carry operating costs.
-
-## Try it
-
-- **Plan** — the main page: tap fields, or draw your own, and press *Make my plan*.
-- `?lang=ar` opens in Arabic · `?mode=draw` opens in drawing mode · `?judge=1`
-  opens on a finished plan with the *Numbers* section expanded.
-""")
-    _img("sens", "Why we hedge: the benefit depends on the gap rule, so a robust order stays positive in every world.")
+""", unsafe_allow_html=True)
+    _img("sens", 6, "Why we hedge: the benefit depends on the gap rule, so a robust order stays positive in every world.")
