@@ -36,6 +36,7 @@ import hassad_style as skin
 from i18n import (CONTENT, FIELD_LABELS, STRINGS, blocks_word, days_word, fields_word, label,
                   orders_word)
 from simulate import HARVEST_RATE_HA_PER_DAY
+from exact import MAX_EXACT_FIELDS, MAX_EXACT_FIELDS_WEIGHTED
 
 st.set_page_config(page_title="Hassad", page_icon="favicon.png", layout="centered",
                    initial_sidebar_state="collapsed")
@@ -693,7 +694,11 @@ if ss.screen == "fields":
             html(f'<div class="count">{count_line(len(drawn))}<span class="ha">{bdi(f"{ha_drawn:.1f}")} {T["ha"]}</span></div>')
         else:
             html(f'<p class="hint">{T["drawn_none"]}</p>')
-        ready = bool(drawn)
+        # the exact solver's limit: say so plainly instead of failing
+        too_many = len(drawn) > MAX_EXACT_FIELDS
+        if too_many:
+            html(f'<p class="hint">{T["too_many"].format(n=bdi(MAX_EXACT_FIELDS))}</p>')
+        ready = bool(drawn) and not too_many
 
     if st.button(T["make_plan"], type="primary", width="stretch", disabled=not ready):
         if ss.mode == "custom":
@@ -887,9 +892,11 @@ else:
                 rule = st.segmented_control(T["gap_rule"], [T["gap_dry"], T["gap_wet"]],
                                             default=T["gap_dry"] if ss.dry_year else T["gap_wet"],
                                             width="stretch", key="gap_seg")
+                # the fire + driving solver handles fewer fields than the fire-only one
+                bal_ok = len(plan["G"].nodes) <= MAX_EXACT_FIELDS_WEIGHTED
                 obj = st.segmented_control(T["objective"], [T["obj_fire"], T["obj_driving"]],
                                            default=T["obj_driving"] if ss.balanced else T["obj_fire"],
-                                           width="stretch", key="obj_seg")
+                                           width="stretch", key="obj_seg", disabled=not bal_ok)
                 new_dry = rule != T["gap_wet"]
                 new_bal = obj == T["obj_driving"]
                 mach = ss.machine_at

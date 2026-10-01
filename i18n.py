@@ -22,11 +22,12 @@ STRINGS = {
         "mode_draw": "Draw my own fields",
         "fields_title": "Tap your fields",
         "draw_title": "Draw your fields",
+        "too_many": "Hassad can plan up to {n} fields at a time. Remove some fields, or split the farm into two plans.",
         "draw_hint": "Use the pencil tool on the map to outline each field, then press “Make my plan”.",
         "drawn_none": "No fields drawn yet.",
         "n_fields": "{n} fields",
-        "rule_dry": "dry-year",
-        "rule_wet": "wet-year",
+        "rule_dry": "“every gap can carry fire”",
+        "rule_wet": "“gaps stay green”",
         "all": "All",
         "none": "None",
         "make_plan": "Make my plan",
@@ -60,10 +61,10 @@ STRINGS = {
         "updated": "Plan updated",
         "econ_title": "Value at stake",
         "econ_line": "{ha} ha of wheat ≈ ${usd} this season",
-        "econ_cost": "Hassad's cost to the farmer: $0",
+        "econ_cost": "For the farmer: no device, no fee",
         "econ_note": "Estimate: {y} t/ha × ${p}/t — assumptions until sourced.",
         "econ_event_title": "If a fire reaches your fields on a random day",
-        "econ_event_line": "Burnable block: {plan} ha with this plan, instead of {naive} ha the usual way",
+        "econ_event_line": "Burnable block: {plan} ha with this plan, instead of {naive} ha with largest field first",
         "econ_event_saving": "{ha} ha (≈ ${usd}) less crop exposed per fire",
         "econ_chance": "Chance a fire reaches these fields this season",
         "econ_expected": "Expected saving this season: ≈ ${usd}",
@@ -86,13 +87,13 @@ STRINGS = {
         "csv": "Schedule (CSV)",
         "model_switches": "Model switches — judges only; the farmer never sees these",
         "gap_rule": "Gap rule",
-        "gap_dry": "Dry year 175 m",
-        "gap_wet": "Wet year 100 m",
+        "gap_dry": "175 m: every gap can carry fire",
+        "gap_wet": "100 m: gaps stay green",
         "objective": "Objective",
         "obj_fire": "Fire only",
         "obj_driving": "Fire + driving",
         "machine_at": "Machine is at",
-        "footer": "Exact optimum over every possible order of {n} fields (gap rule {m} m; {mode}). Solver verified against brute-force enumeration; gap conditions measured from Sentinel-2 imagery. Hassad · FIRST Global Challenge 2026 · Team Lebanon.",
+        "footer": "Exact optimum over every possible order of {n} fields (gap rule {m} m; {mode}). The solver is checked on every run against all 5,040 orders of a 7-field test; the two gap rules come from Sentinel-2 images of three past Junes. Hassad · FIRST Global Challenge 2026 · Team Lebanon.",
         "fire_only": "fire only",
         "fire_driving": "fire + driving",
         # --- added to complete the redesign (was missing)
@@ -127,11 +128,12 @@ STRINGS = {
         "mode_draw": "ارسم حقولي",
         "fields_title": "اختر حقولك على الخريطة",
         "draw_title": "ارسم حقولك",
+        "too_many": "يستطيع «حصاد» أن يخطّط لـ{n} حقلاً كحدّ أقصى في المرة الواحدة. احذف بعض الحقول، أو قسّم المزرعة إلى خطتين.",
         "draw_hint": "ارسم حدود كل حقل بأداة المضلّع على الخريطة، ثم اضغط «جهّز خطتي».",
         "drawn_none": "لم ترسم أي حقل بعد.",
         "n_fields": "عدد الحقول: {n}",
-        "rule_dry": "السنة الجافة",
-        "rule_wet": "السنة الرطبة",
+        "rule_dry": "«كل فجوة تنقل النار»",
+        "rule_wet": "«الفجوات خضراء»",
         "all": "الكل",
         "none": "إلغاء الكل",
         "make_plan": "جهّز خطتي",
@@ -165,10 +167,10 @@ STRINGS = {
         "updated": "تم تحديث الخطة",
         "econ_title": "القيمة المعرّضة للخطر",
         "econ_line": "{ha} هكتار قمح ≈ {usd} دولار هذا الموسم",
-        "econ_cost": "كلفة «حصاد» على المزارع: 0 دولار",
+        "econ_cost": "للمزارع: لا جهاز ولا رسوم",
         "econ_note": "تقدير: {y} طن/هكتار × {p} دولار/طن — أرقام مبدئية حتى توثيقها.",
         "econ_event_title": "إذا وصلت النار إلى حقولك في يوم عشوائي",
-        "econ_event_line": "الكتلة القابلة للاحتراق: {plan} هكتار بهذه الخطة، بدل {naive} هكتار بالطريقة المعتادة",
+        "econ_event_line": "الكتلة القابلة للاحتراق: {plan} هكتار بهذه الخطة، بدل {naive} هكتار بترتيب الحقل الأكبر أولاً",
         "econ_event_saving": "في كل حريق: {ha} هكتار أقل من المحصول المعرّض للنار (≈ {usd} دولار)",
         "econ_chance": "احتمال وصول حريق إلى هذه الحقول هذا الموسم",
         "econ_expected": "التوفير المتوقع هذا الموسم: ≈ {usd} دولار",
@@ -191,13 +193,13 @@ STRINGS = {
         "csv": "الجدول (CSV)",
         "model_switches": "إعدادات النموذج — للحكام فقط؛ لا يراها المزارع",
         "gap_rule": "قاعدة الفجوات",
-        "gap_dry": "سنة جافة 175 م",
-        "gap_wet": "سنة رطبة 100 م",
+        "gap_dry": "175 م: كل فجوة تنقل النار",
+        "gap_wet": "100 م: الفجوات خضراء",
         "objective": "الهدف",
         "obj_fire": "النار فقط",
         "obj_driving": "النار + القيادة",
         "machine_at": "الحصّادة عند",
-        "footer": "الترتيب الأمثل بالضبط من بين كل الترتيبات الممكنة لـ{n} حقول (قاعدة الفجوات {m} م؛ {mode}). تم التحقق من الحل بالمقارنة مع التعداد الكامل؛ حالة الفجوات مقيسة من صور سنتينل-2. حصاد · FIRST Global Challenge 2026 · فريق لبنان.",
+        "footer": "الترتيب الأمثل بالضبط من بين كل الترتيبات الممكنة لـ{n} حقول (قاعدة الفجوات {m} م؛ {mode}). يُفحص الحلّ في كل تشغيل بمقارنته مع كل الترتيبات الـ5,040 لاختبار من 7 حقول؛ وقاعدتا الفجوات مأخوذتان من صور سنتينل-2 لثلاثة أشهر حزيران سابقة. حصاد · FIRST Global Challenge 2026 · فريق لبنان.",
         "fire_only": "النار فقط",
         "fire_driving": "النار + القيادة",
         # --- added to complete the redesign (was missing)
@@ -336,20 +338,20 @@ CONTENT = {
     # "What does this mean?" -- the expander under the Cut-now card.
     "criteria_short": {
         "en": """<ol>
-<li><b>Dry standing wheat is fuel.</b> A cut field is short stubble: fire finds nothing to burn there, so it works as a firebreak.</li>
-<li><b>Fields close together are connected.</b> Under this year's rule fire can cross a gap of up to {gap} m, so your fields, {fields} in all, form {blocks} today.</li>
+<li><b>Dry standing wheat is fuel.</b> A cut field is short stubble with little left to burn, so it works as a firebreak.</li>
+<li><b>Fields close together are connected.</b> Under the gap rule in use, fire can cross a gap of up to {gap} m, so your fields, {fields} in all, form {blocks} today.</li>
 <li><b>Every day, Hassad measures the largest block.</b> Today it is {before} ha. Once field {f} is cut it is {after} ha. The aim is to keep that number as small as possible on every day until the last field is cut.</li>
-<li><b>It checks every possible order.</b> For {fields} that is {orders}. Hassad tries them all and picks the one that keeps the blocks smallest across the whole season. It assumes one harvester cutting about {rate} ha a day, so a bigger field simply takes more days (field {f}: {days}).</li>
+<li><b>It finds the best of every possible order.</b> For {fields} that is {orders}. Hassad does not try them one by one: an exact method finds the order that keeps the blocks smallest across the whole season, for this model. It assumes one harvester cutting about {rate} ha a day, so a bigger field simply takes more days (field {f}: {days}).</li>
 <li><b>When you mark a field cut,</b> Hassad treats it as a firebreak from then on, whatever order you actually cut in, and re-plans the fields that remain from where the harvester is. Undo puts it back.</li>
-<li><b>The two gap rules.</b> In a dry year the grass between fields is dead by June and carries fire, so fields up to {dry} m apart count as connected. In a wet year the gaps stay green, so only fields within {wet} m count. Hassad is using the {rule} rule now ({gap} m): a plan that is safe when the gaps burn is safe either way.</li>
+<li><b>The two gap rules.</b> If the grass in every gap between the fields is dry enough to carry fire, fields up to {dry} m apart count as connected. If the gaps stay green, only fields within {wet} m count. Hassad is using the {rule} rule now ({gap} m). The best order depends on the rule: an order made for one rule can be worse under the other, so choose the rule that matches your fields this year.</li>
 </ol>""",
         "ar": """<ol>
-<li><b>القمح القائم الجاف وقود.</b> أما الحقل المحصود فقشّ قصير لا تجد النار فيه ما تأكله، فيصبح حاجزاً يوقفها.</li>
-<li><b>الحقول المتقاربة متصلة.</b> بقاعدة هذه السنة تعبر النار فجوة تصل إلى {gap} م، ولذلك تشكّل حقولك، وهي {fields}، اليوم {blocks}.</li>
+<li><b>القمح القائم الجاف وقود.</b> أما الحقل المحصود فقشّ قصير لا يبقى فيه إلا القليل مما يحترق، فيصبح حاجزاً للنار.</li>
+<li><b>الحقول المتقاربة متصلة.</b> بقاعدة الفجوات المستخدمة تعبر النار فجوة تصل إلى {gap} م، ولذلك تشكّل حقولك، وهي {fields}، اليوم {blocks}.</li>
 <li><b>كل يوم يقيس «حصاد» أكبر كتلة.</b> اليوم هي {before} هكتار، وبعد حصاد حقل {f} تصبح {after} هكتار. الهدف أن يبقى هذا الرقم أصغر ما يمكن في كل يوم حتى يُحصد آخر حقل.</li>
-<li><b>يجرّب كل ترتيب ممكن.</b> مع {fields} يوجد {orders}. يجرّبها «حصاد» كلها ويختار الترتيب الذي تبقى فيه الكتل أصغر على مدار الموسم كله. ويفترض حصّادة واحدة تقطع نحو {rate} هكتارات في اليوم، فالحقل الأكبر يأخذ أياماً أكثر (حقل {f}: {days}).</li>
+<li><b>يجد أفضل ترتيب بين كل الترتيبات الممكنة.</b> مع {fields} يوجد {orders}. لا يجرّبها «حصاد» واحداً واحداً، بل تجد طريقة دقيقة الترتيب الذي تبقى فيه الكتل أصغر على مدار الموسم كله، بحسب هذا النموذج. ويفترض حصّادة واحدة تقطع نحو {rate} هكتارات في اليوم، فالحقل الأكبر يأخذ أياماً أكثر (حقل {f}: {days}).</li>
 <li><b>عندما تحدّد حقلاً على أنه محصود،</b> يعامله «حصاد» من الآن فصاعداً كحاجز للنار، بأيّ ترتيب حصدته فعلاً، ثم يحسب أفضل ترتيب للحقول الباقية انطلاقاً من مكان الحصّادة. وزر «تراجع» يعيد الأمر كما كان.</li>
-<li><b>قاعدتا الفجوة.</b> في السنة الجافة يكون العشب بين الحقول قد يبس بحلول حزيران وينقل النار، فتُعدّ الحقول التي تفصلها مسافة تصل إلى {dry} م متصلة. وفي السنة الرطبة تبقى الفجوات خضراء، فلا تُعدّ متصلة إلا الحقول التي تفصلها {wet} م أو أقل. يعمل «حصاد» الآن بقاعدة {rule} ({gap} م): الخطة الآمنة حين تشتعل الفجوات آمنة في الحالتين.</li>
+<li><b>قاعدتا الفجوة.</b> إذا كان العشب في كل فجوة بين الحقول جافاً بما يكفي لينقل النار، تُعدّ الحقول التي تفصلها مسافة تصل إلى {dry} م متصلة. وإذا بقيت الفجوات خضراء، فلا تُعدّ متصلة إلا الحقول التي تفصلها {wet} م أو أقل. يعمل «حصاد» الآن بقاعدة {rule} ({gap} م). أفضل ترتيب يتغيّر بحسب القاعدة: الترتيب المصمَّم لقاعدة قد يكون أسوأ في الأخرى، فاختر القاعدة التي تناسب حقولك هذه السنة.</li>
 </ol>""",
     },
 }

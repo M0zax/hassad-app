@@ -132,6 +132,9 @@ bdi{unicode-bidi:isolate;}
 [data-testid="stButtonGroup"] button[data-variant="segmented_control"]{
  flex:1 1 0!important;min-width:0;min-height:48px;padding:0 12px!important;font:600 16px/1.3 var(--sans);border:2px solid var(--ink)!important;
  border-radius:0!important;margin:0!important;margin-inline-end:-2px!important;box-shadow:none!important;background:var(--paper)!important;color:var(--ink)!important;}
+/* the gap-rule labels are two short sentences: let them wrap instead of cutting them off */
+.st-key-gap_seg button[data-variant="segmented_control"]{padding:6px 10px!important;font-size:15px!important;}
+.st-key-gap_seg button[data-variant="segmented_control"] *{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
 [data-testid="stButtonGroup"] button[data-variant="segmented_control"]:first-child{border-start-start-radius:4px!important;border-end-start-radius:4px!important;}
 [data-testid="stButtonGroup"] button[data-variant="segmented_control"]:last-child{border-start-end-radius:4px!important;border-end-end-radius:4px!important;margin-inline-end:0!important;}
 [data-testid="stButtonGroup"] button[data-variant="segmented_control"][data-selected="true"],

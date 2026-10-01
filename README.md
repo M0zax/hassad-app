@@ -1,7 +1,15 @@
-# Harvest-Sequencing Optimizer
+# Hassad (حصاد): fire-safe harvest scheduling for Lebanon's wheat fields
 
 **FIRST Global Challenge 2026 — reducing wheat-fire risk in Lebanon's Bekaa Valley
 by choosing the ORDER in which neighbouring fields get harvested.**
+
+> **Current result (Phase 3).** The app finds the exact best order for our model.
+> If every gap between the fields can carry fire (the 175 m rule), the season's
+> fire exposure is 33% lower than largest field first (1093 → 730 ha·days). If
+> the gaps stay green (the 100 m rule), the best order for that case gives 6%
+> less. These are model results for 11 real fields, not a measured harvest. The
+> sections below keep the Phase 1 record (greedy heuristics, the 16.9% balanced
+> result) for reference.
 
 ## The idea in one paragraph
 
@@ -29,15 +37,15 @@ Two objectives, both minimised:
 > one that holds no matter how that question resolves, and one that is larger but
 > conditional. Quoting the conditional number as if it were settled would be wrong.
 
-### The claim that holds either way
+### Phase 1: the order that gains under both rules we tested
 
 ```
 ROBUST SCHEDULE:  13 -> nte -> 9 -> 12 -> 6 -> 8 -> 10 -> 11 -> 5 -> 7 -> 4
 ```
 
 **5.5% less season-long fire exposure** than the naive largest-first baseline —
-and it delivers that whether the true adjacency rule turns out to be 100 m or
-175 m. Purely by reordering the harvest. No new equipment.
+under both rules we tested, 100 m and 175 m (not under every mix of dry and
+green gaps: it is worse than largest first on 16 of the 128 possible mixes). Purely by reordering the harvest. No new equipment.
 
 ### The larger claim, if the 175 m rule is confirmed
 
@@ -349,16 +357,16 @@ chance that a fire reaches a given cluster in a season. What the model gives
 exactly is the burnable block a fire would find on a **random day** (the
 season-average largest connected block):
 
-| world | schedule | burnable block, usual order → plan | less exposed per fire event |
+| world | schedule | burnable block, largest first → plan | less exposed per fire event |
 | --- | --- | --- | --- |
-| 175 m (cured gaps, e.g. 2025) | exact optimum | 45.6 → 30.4 ha | **15.1 ha ≈ $13,200** |
+| 175 m (every gap can carry fire) | exact optimum | 45.6 → 30.4 ha | **15.1 ha ≈ $13,200** |
 | 175 m | robust | 45.6 → 43.1 ha | 2.5 ha ≈ $2,200 |
 | 100 m (green gaps) | exact optimum | 24.6 → 23.0 ha | 1.5 ha ≈ $1,300 |
 | 100 m | robust | 24.6 → 23.2 ha | 1.3 ha ≈ $1,200 |
 
 (at an assumed 3.5 t/ha × $250/t). Expected saving per season = that figure ×
 the chance of a fire event; the app's Numbers section has a slider for that
-chance so the assumption stays visible. The farmer's cost is $0 either way.
+chance so the assumption stays visible. The farmer needs no device and pays no fee either way.
 
 ## Modelling assumptions (state these if a judge asks)
 

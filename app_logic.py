@@ -30,11 +30,13 @@ from optimize import naive_largest_first, greedy_fire_only
 # CONSTANTS
 # ---------------------------------------------------------------------------
 
-# The two adjacency rules the satellite check showed BOTH occur, depending on
-# the year (cured gaps in 2025 -> 175 m; green gaps in 2024/2026 -> 100 m).
+# The two adjacency rules. The satellite check of three past Junes showed the
+# gaps change from year to year (June 2025: gap 3-4 dry, four gaps borderline;
+# June 2024: the gaps around field 3 green; June 2026 unclear), so neither
+# rule is tied to a particular year. Labels only; the values are unchanged.
 GAP_RULES = {
-    "175 m — gaps are cured fuel (a dry year, like June 2025)": 175.0,
-    "100 m — gaps stay green (a wet year, like June 2024)": 100.0,
+    "175 m — every gap between the fields can carry fire": 175.0,
+    "100 m — the gaps stay green": 100.0,
 }
 DEFAULT_GAP_RULE = list(GAP_RULES)[0]
 
