@@ -104,8 +104,9 @@ every mix of dry and green gaps, so we never call any order guaranteed.
 **Per fire event** (if every gap can carry fire): on a random day of the
 season a fire would find a 46 ha burnable block with largest field first
 versus 30 ha under the plan — **15 ha
-(about &#36;13,000 of crop) less exposed per fire**, at an assumed
-{y} t/ha × &#36;{p}/t. Expected saving per season = that × the chance of a fire,
+(about 68 t of wheat, ≈ &#36;18,400) less exposed per fire**, at {y} t/ha (the
+West Bekaa average yield) × &#36;{p}/t (the 2023 Lebanese state price for wheat).
+Expected saving per season = that × the chance of a fire,
 which nobody has measured; the app's *Numbers* section has a slider for it.
 
 ## Evidence
@@ -163,8 +164,9 @@ surviving a refresh all work.
 a different order for work they already do, with some extra driving (about
 3.7 km over the season). The benefit is computed by our model, not yet
 measured in a real harvest: 33% less fire exposure if every gap between the
-fields can carry fire, 6% if the gaps stay green, and about 15 ha (~&#36;13,000
-at assumed prices) less crop exposed per fire event on our 141 ha study area. The section
+fields can carry fire, 6% if the gaps stay green, and about 15 ha (≈ 68 t of
+wheat, ≈ &#36;18,400 at the West Bekaa average yield and the 2023 state price) less
+crop exposed per fire event on our 141 ha study area. The section
 *Cost and benefit, in numbers* below sets it out line by line.
 
 **Why not focus on Arabic?** We did, on his advice: the whole app runs in
@@ -193,21 +195,23 @@ we show that as an explicit slider rather than bury it in a headline.
 
 Every figure below is computed by the app from the 11 study fields (141 ha,
 24-day season, the 175 m rule — every gap can carry fire — unless stated) and appears in the Numbers
-section under every plan. Yield and price are assumptions until Team A
-sources Bekaa figures.
+section under every plan. Yield: 4.5 t/ha, the mean of a survey of West Bekaa
+wheat farmers (4.58 t/ha, Tohmé Tawk et al. 2019). Price: &#36;270/t, the 2023
+Lebanese state price for local soft wheat. Both are published figures, not
+measured on our fields; a small farmer selling to a dealer may get much less.
 
 | | value |
 | --- | --- |
 | For the farmer | No device, no fee; the same harvest in a different order, with about 3.7 km more driving over the season |
 | Cost to run the service | hosting on Streamlit Community Cloud (free tier); Sentinel-2 and NASA FIRMS data (free); tracing a village's fields once (hours, not money); no hardware |
-| Crop value at stake | ≈ &#36;123,500 per season (3.5 t/ha × &#36;250/t = &#36;875/ha, assumed) |
+| Crop value at stake | ≈ &#36;171,500 per season (4.5 t/ha × &#36;270/t = &#36;1,215/ha) |
 | Largest block a fire finds on a random day, largest field first | 46 ha |
 | … with Hassad's order | 30 ha |
-| Less crop exposed per fire event | 15.1 ha ≈ &#36;13,200, about &#36;94 of crop per hectare in the plan |
+| Less crop exposed per fire event | 15.1 ha ≈ 68 t of wheat ≈ &#36;18,400, about &#36;130 of crop per hectare in the plan |
 | Season fire exposure, every gap can carry fire (ha·days) | 1093 largest field first → 854 greedy → 730 Hassad (−33%) |
 | Season fire exposure, gaps stay green | 589 → 553 with the best order for that case (−6%) |
 | Compromise order, under both rules (not under every mix of gaps) | −5.5% |
-| Expected saving per season = chance of a fire × &#36;13,200 | 5%: ≈ &#36;660 · 10%: ≈ &#36;1,300 · 25%: ≈ &#36;3,300 · 50%: ≈ &#36;6,600 |
+| Expected saving per season = chance of a fire × &#36;18,400 | 5%: ≈ &#36;920 · 10%: ≈ &#36;1,800 · 25%: ≈ &#36;4,600 · 50%: ≈ &#36;9,200 |
 | Driving over the season | 19.5 km largest field first → 23.2 km fire-only order (+3.7 km); the fire + driving setting: 21.9 km at −33.0% |
 | Time | a plan in under a second; re-planning after a cut, one tap |
 
@@ -258,8 +262,9 @@ the fire + driving setting); a method for larger villages is future work.
 **What are the limits?** One harvester per plan; a field counts as fuel until
 fully cut (conservative); fire spreads only between adjacent standing fields —
 no wind direction or ignition probability yet; the two gap rules come from
-three summers of imagery at one site; the economics use assumed yield and
-price until sourced. All of this is stated in the code and the README.
+three summers of imagery at one site; the economics use a published yield
+(West Bekaa survey average) and price (2023 state price), not values measured
+on our fields. All of this is stated in the code and the README.
 
 ## The team, the plan after Incheon
 

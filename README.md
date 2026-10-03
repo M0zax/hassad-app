@@ -359,12 +359,14 @@ season-average largest connected block):
 
 | world | schedule | burnable block, largest first → plan | less exposed per fire event |
 | --- | --- | --- | --- |
-| 175 m (every gap can carry fire) | exact optimum | 45.6 → 30.4 ha | **15.1 ha ≈ $13,200** |
-| 175 m | robust | 45.6 → 43.1 ha | 2.5 ha ≈ $2,200 |
-| 100 m (green gaps) | exact optimum | 24.6 → 23.0 ha | 1.5 ha ≈ $1,300 |
-| 100 m | robust | 24.6 → 23.2 ha | 1.3 ha ≈ $1,200 |
+| 175 m (every gap can carry fire) | exact optimum | 45.6 → 30.4 ha | **15.1 ha ≈ 68 t ≈ $18,400** |
+| 175 m | robust | 45.6 → 43.1 ha | 2.5 ha ≈ $3,000 |
+| 100 m (green gaps) | exact optimum | 24.6 → 23.0 ha | 1.5 ha ≈ $1,900 |
+| 100 m | robust | 24.6 → 23.2 ha | 1.3 ha ≈ $1,600 |
 
-(at an assumed 3.5 t/ha × $250/t). Expected saving per season = that figure ×
+(at 4.5 t/ha, the mean of a West Bekaa wheat-farmer survey, 4.58 t/ha, Tohmé Tawk
+et al. 2019, × $270/t, the 2023 Lebanese state price for local soft wheat; both
+are published figures, not measured on our fields). Expected saving per season = that figure ×
 the chance of a fire event; the app's Numbers section has a slider for that
 chance so the assumption stays visible. The farmer needs no device and pays no fee either way.
 

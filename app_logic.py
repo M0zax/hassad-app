@@ -43,12 +43,15 @@ DEFAULT_GAP_RULE = list(GAP_RULES)[0]
 # Weight on driving distance when the farmer asks for the balanced plan.
 TRAVEL_WEIGHT = 5.0
 
-# ECONOMICS -- assumptions, clearly labelled as such until Team A sources them.
-# Bekaa irrigated wheat commonly yields 3-4 t/ha; world wheat trades roughly
-# $200-300/t. We show "value at stake", never "money saved": we have no
-# ignition probability, and a judge would ask.
-WHEAT_YIELD_T_PER_HA = 3.5        # ASSUMED -- replace with a sourced Bekaa figure
-WHEAT_PRICE_USD_PER_T = 250.0     # ASSUMED -- replace with the current market price
+# ECONOMICS -- sourced central values (3 Oct 2026; ranges in the Phase 3 impact analysis).
+# Yield: mean of a West Bekaa wheat-farmer survey, 4.58 t/ha (Tohme Tawk et al. 2019,
+# JAFSCD 8(4), doi:10.5304/jafscd.2019.084.011), rounded down to 4.5.
+# Price: the 2023 Lebanese state purchase price for local soft wheat, $270/t
+# (L'Orient Today, 22 Jun 2023). Both are published figures, not measured on our fields.
+# We show "value at stake", never "money saved": we have no ignition probability,
+# and a judge would ask.
+WHEAT_YIELD_T_PER_HA = 4.5        # SOURCED -- West Bekaa survey mean (4.58 t/ha)
+WHEAT_PRICE_USD_PER_T = 270.0     # SOURCED -- 2023 Lebanese state price, soft wheat
 FARMER_COST_USD = 0.0             # this one is a fact
 
 # Names for fields a farmer draws: 1, 2, 3 ... (rendered per language).
@@ -541,6 +544,6 @@ if __name__ == "__main__":
 
     e = economics(p)
     print(f"economics: {e['total_ha']:.0f} ha at stake ≈ ${e['value_usd']:,.0f} "
-          f"(assumed {e['yield_t_per_ha']} t/ha × ${e['price_usd_per_t']:.0f}/t); "
+          f"(at {e['yield_t_per_ha']} t/ha × ${e['price_usd_per_t']:.0f}/t); "
           f"farmer cost ${e['farmer_cost_usd']:.0f}")
     print("app_logic self-test OK")
